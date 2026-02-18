@@ -24,7 +24,7 @@ func load() (*Config, error) {
 	config := &Config{}
 
 	if err := loadFromEnv(config); err != nil {
-		return nil, WhileLoadingFieldsError
+		return nil, err
 	}
 
 	return config, nil

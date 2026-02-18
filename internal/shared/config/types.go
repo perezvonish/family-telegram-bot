@@ -1,8 +1,9 @@
 package config
 
 type Config struct {
-	Server ServerConfig
-	Mongo  MongoConfig
+	Server   ServerConfig
+	Mongo    MongoConfig
+	Telegram TelegramConfig
 }
 
 type ServerConfig struct {
@@ -20,5 +21,5 @@ type MongoConfig struct {
 }
 
 type TelegramConfig struct {
-	BotToken string `env:"TELEGRAM_BOT_TOKEN=" envDefault:"" required:"true"`
+	BotToken string `env:"TELEGRAM_BOT_TOKEN" envDefault:"" required:"true"`
 }
