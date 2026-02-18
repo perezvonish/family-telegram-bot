@@ -1,8 +1,6 @@
 package user
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -13,7 +11,4 @@ type User struct {
 
 	FirstName string `json:"firstName"`
 	Username  string `json:"username"`
-
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
 }
