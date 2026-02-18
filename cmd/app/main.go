@@ -5,19 +5,23 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"perezvonish/health-tracker/internal/entry-points/telegram_bot"
 	"perezvonish/health-tracker/internal/shared/config"
 	"syscall"
 	"time"
 )
 
 func main() {
-	_, err := config.Init()
+	cfg, err := config.Init()
 	if err != nil {
 		panic(err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	telegramChatBot := telegram_bot.NewChatBot(ctx, cfg.Telegram)
+	telegramChatBot.Start()
 
 	<-ctx.Done()
 	gracefulShutdown()
