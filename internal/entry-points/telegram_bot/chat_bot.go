@@ -86,9 +86,9 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 
 func (c *ChatBot) enterDiaryScene(chatID int64) {
 	session := c.sessionStore.Reset(chatID)
-	// TODO: временный перескок на шаг 3
-	session.Step = 1
-	c.sendWithKeyboard(chatID, "Вчера была менструация?", yesNoKeyboard())
+	// TODO: временный перескок на шаг 2 (работа)
+	session.Step = 2
+	c.sendWithKeyboard(chatID, "Работала сегодня?", yesNoKeyboard())
 
 	// session.Step = 0
 	// msg := tgbotapi.NewMessage(chatID, "Во сколько вчера легла?")
@@ -106,22 +106,22 @@ func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, t
 	case 1:
 		session.Answers.WakeTime = text
 		session.Step = 2
-		c.sendWithKeyboard(chatID, "Работала вчера?", yesNoKeyboard())
+		c.sendWithKeyboard(chatID, "Работала сегодня?", yesNoKeyboard())
 
 	case 2:
 		session.Answers.WorkedToday = text
 		session.Step = 3
-		c.sendWithKeyboard(chatID, "Вчера была менструация?", yesNoKeyboard())
+		c.sendWithKeyboard(chatID, "Сегодня была менструация?", yesNoKeyboard())
 
 	case 3:
 		session.Answers.Menstruation = text
 		session.Step = 4
-		c.sendWithKeyboard(chatID, "Было ли голодание в течение вчерашнего дня?", fastingKeyboard())
+		c.sendWithKeyboard(chatID, "Было ли голодание в течение дня?", fastingKeyboard())
 
 	case 4:
 		session.Answers.Fasting = text
 		session.Step = 5
-		c.sendWithKeyboard(chatID, "Была ли вчера физическая активность?", activityKeyboard())
+		c.sendWithKeyboard(chatID, "Была ли физическая активность?", activityKeyboard())
 
 	case 5:
 		session.Answers.Activity = text
@@ -131,7 +131,7 @@ func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, t
 	case 10:
 		dose := strings.TrimSpace(text)
 		if dose == "" {
-			c.sendMessage(chatID, "Введите препарат и дозировку. Например: Ибуклин 600")
+			c.sendMessage(chatID, "Введи препарат и дозировку. Например: Ибуклин 600")
 			return
 		}
 
@@ -176,7 +176,7 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 		value := c.parseScaleValue(data)
 		session.Answers.Mood = value
 		session.Step = 9
-		c.sendWithInlineKeyboard(chatID, "Оцени вчерашнюю мигрень (0 - не было | 10 - вызываем скорую):", scaleKeyboard("migraine", false))
+		c.sendWithInlineKeyboard(chatID, "Оцени мигрень (0 - не было | 10 - вызываем скорую):", scaleKeyboard("migraine", false))
 
 	case 9:
 		value := c.parseScaleValue(data)
@@ -191,7 +191,7 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 		}
 
 		session.Step = 11
-		c.sendWithInlineKeyboard(chatID, "Оцени вчерашний уровень либидо (0 - что такое секс? | 10 - я тебя сама сейчас трахну):", scaleKeyboard("libido", true))
+		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо (0 - что такое секс? | 10 - я тебя сама сейчас трахну):", scaleKeyboard("libido", true))
 
 	case 11:
 		value := c.parseScaleValue(data)
