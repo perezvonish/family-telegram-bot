@@ -26,10 +26,14 @@ type DailyReport struct {
 }
 
 func NewDailyReport(userID uuid.UUID) *DailyReport {
+	now := time.Now().UTC()
+	yesterday := now.AddDate(0, 0, -1)
+	reportDate := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, time.UTC)
+
 	return &DailyReport{
 		UserID:       userID,
-		CreatedAt:    time.Now(),
-		ReportDate:   time.Now(),
+		CreatedAt:    now,
+		ReportDate:   reportDate,
 		MealsSkipped: []string{},
 		MedsIssues:   []string{},
 	}
