@@ -7,7 +7,6 @@ import (
 )
 
 type DailyReport struct {
-	ID         uuid.UUID `json:"id"`
 	UserID     uuid.UUID `json:"userId"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ReportDate time.Time `json:"reportDate"`
@@ -28,7 +27,6 @@ type DailyReport struct {
 
 func NewDailyReport(userID uuid.UUID) *DailyReport {
 	return &DailyReport{
-		ID:           uuid.New(),
 		UserID:       userID,
 		CreatedAt:    time.Now(),
 		ReportDate:   time.Now(),

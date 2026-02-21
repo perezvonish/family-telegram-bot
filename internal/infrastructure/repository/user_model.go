@@ -3,6 +3,7 @@ package repository
 import (
 	"perezvonish/health-tracker/internal/domain/user"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,6 +27,12 @@ func (f *FlexInt64) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	return nil
 }
 
+var mongoNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+
+func objectIDToUUID(oid primitive.ObjectID) uuid.UUID {
+	return uuid.NewSHA1(mongoNamespace, oid[:])
+}
+
 type UserModel struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty"`
 	TelegramID FlexInt64          `bson:"telegram_id"`
@@ -35,6 +42,7 @@ type UserModel struct {
 
 func (m *UserModel) ToEntity() *user.User {
 	return &user.User{
+		ID:         objectIDToUUID(m.ID),
 		TelegramID: int64(m.TelegramID),
 		FirstName:  m.FirstName,
 		Username:   m.Username,

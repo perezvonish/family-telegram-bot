@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
 )
 
 var (
@@ -199,7 +198,7 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 
 		log.Printf("FINAL: %+v", session.Answers)
 
-		if err := c.saveDailyReport(chatID, session); err != nil {
+		if err := c.saveDailyReport(userID, session); err != nil {
 			log.Printf("Failed to save daily report: %v", err)
 			c.sendMessage(chatID, "Ошибка сохранения. Попробуй ещё раз.")
 			return
@@ -290,15 +289,13 @@ func (c *ChatBot) isAuthorized(telegramUserID int64) bool {
 	return err == nil
 }
 
-var telegramNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+func (c *ChatBot) saveDailyReport(telegramID int64, session *Session) error {
+	user, err := c.userRepo.FindByTelegramID(c.ctx, telegramID)
+	if err != nil {
+		return err
+	}
 
-func userIDFromTelegramChat(chatID int64) uuid.UUID {
-	return uuid.NewSHA1(telegramNamespace, []byte(strconv.FormatInt(chatID, 10)))
-}
-
-func (c *ChatBot) saveDailyReport(chatID int64, session *Session) error {
-	userID := userIDFromTelegramChat(chatID)
-	report := daily_report.NewDailyReport(userID)
+	report := daily_report.NewDailyReport(user.ID)
 	report.SleepTime = session.Answers.SleepTime
 	report.WakeTime = session.Answers.WakeTime
 	report.WorkedToday = session.Answers.WorkedToday
