@@ -271,8 +271,15 @@ func (c *ChatBot) editMessageRemoveKeyboard(chatID int64, messageID int) {
 	c.telegramBotApi.Send(edit)
 }
 
+var telegramNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+
+func userIDFromTelegramChat(chatID int64) uuid.UUID {
+	return uuid.NewSHA1(telegramNamespace, []byte(strconv.FormatInt(chatID, 10)))
+}
+
 func (c *ChatBot) saveDailyReport(chatID int64, session *Session) error {
-	report := daily_report.NewDailyReport(uuid.Nil) // TODO: use real user ID
+	userID := userIDFromTelegramChat(chatID)
+	report := daily_report.NewDailyReport(userID)
 	report.SleepTime = session.Answers.SleepTime
 	report.WakeTime = session.Answers.WakeTime
 	report.WorkedToday = session.Answers.WorkedToday
