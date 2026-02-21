@@ -21,7 +21,7 @@ func NewMongoDB(ctx context.Context, cfg config.MongoConfig) (*MongoDB, error) {
 	uri := cfg.URI
 	if uri == "" {
 		if cfg.Username != "" && cfg.Password != "" {
-			uri = fmt.Sprintf("mongodb://%s:%s@%s:%d", cfg.Username, cfg.Password, cfg.Host, cfg.Port)
+			uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/?authSource=admin", cfg.Username, cfg.Password, cfg.Host, cfg.Port)
 		} else {
 			uri = fmt.Sprintf("mongodb://%s:%d", cfg.Host, cfg.Port)
 		}
