@@ -12,12 +12,13 @@ type ServerConfig struct {
 }
 
 type MongoConfig struct {
-	Host              string `env:"MONGO_HOST" envDefault:"localhost" required:"true"`
-	Port              int    `env:"MONGO_PORT" envDefault:"5432" required:"true"`
-	Username          string `env:"MONGO_USERNAME" envDefault:"postgres" required:"true"`
-	Password          string `env:"MONGO_PASSWORD" envDefault:"postgres" required:"true"`
-	DatabaseName      string `env:"MONGO_DATABASE_NAME" envDefault:"postgres" required:"true"`
-	ConnectRetryCount int    `env:"MONGO_DATABASE_CONNECT_RETRY_COUNT" envDefault:"10" required:"true"`
+	URI               string `env:"MONGO_URI" envDefault:""`
+	Host              string `env:"MONGO_HOST" envDefault:"localhost"`
+	Port              int    `env:"MONGO_PORT" envDefault:"27017"`
+	Username          string `env:"MONGO_USERNAME" envDefault:""`
+	Password          string `env:"MONGO_PASSWORD" envDefault:""`
+	DatabaseName      string `env:"MONGO_DATABASE_NAME" envDefault:"health_tracker" required:"true"`
+	ConnectRetryCount int    `env:"MONGO_CONNECT_RETRY_COUNT" envDefault:"5"`
 }
 
 type TelegramConfig struct {
