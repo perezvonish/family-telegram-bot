@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"perezvonish/health-tracker/internal/domain/daily_report"
+	"perezvonish/health-tracker/internal/domain/user"
 	"perezvonish/health-tracker/internal/entry-points/telegram_bot"
 	"perezvonish/health-tracker/internal/infrastructure/database"
 	"perezvonish/health-tracker/internal/infrastructure/repository"
@@ -16,6 +17,7 @@ type Container struct {
 	Config  *config.Config
 	MongoDB *database.MongoDB
 
+	UserRepo        user.Repository
 	DailyReportRepo daily_report.Repository
 
 	TelegramBot telegram_bot.Bot
@@ -34,6 +36,9 @@ func NewContainer(ctx context.Context, cfg *config.Config, mongoDB *database.Mon
 }
 
 func (c *Container) initRepositories() {
+	userRepo := repository.NewUserRepository(c.MongoDB)
+	c.UserRepo = repository.NewCachedUserRepository(userRepo)
+
 	c.DailyReportRepo = repository.NewDailyReportRepository(c.MongoDB)
 }
 
