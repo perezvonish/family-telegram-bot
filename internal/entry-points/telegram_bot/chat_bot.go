@@ -3,12 +3,13 @@ package telegram_bot
 import (
 	"context"
 	"log"
-	"perezvonish/health-tracker/internal/shared/config"
+	"perezvonish/health-tracker/internal/domain/daily_report"
 	"slices"
 	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -19,9 +20,9 @@ var (
 type ChatBot struct {
 	ctx context.Context
 
-	telegramBotApi *tgbotapi.BotAPI
-	sessionStore   *SessionStore
-	isDebug        bool
+	telegramBotApi  *tgbotapi.BotAPI
+	sessionStore    *SessionStore
+	dailyReportRepo daily_report.Repository
 }
 
 func (c *ChatBot) Start() {
@@ -183,6 +184,13 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 		session.Step = 12
 
 		log.Printf("FINAL: %+v", session.Answers)
+
+		if err := c.saveDailyReport(chatID, session); err != nil {
+			log.Printf("Failed to save daily report: %v", err)
+			c.sendMessage(chatID, "Ошибка сохранения. Попробуй ещё раз.")
+			return
+		}
+
 		c.sendMessage(chatID, "Готово ✅")
 		c.sessionStore.Delete(chatID)
 	}
@@ -263,20 +271,29 @@ func (c *ChatBot) editMessageRemoveKeyboard(chatID int64, messageID int) {
 	c.telegramBotApi.Send(edit)
 }
 
-func NewChatBot(ctx context.Context, config config.TelegramConfig) Bot {
-	chatBot := &ChatBot{
-		ctx:          ctx,
-		sessionStore: NewSessionStore(),
+func (c *ChatBot) saveDailyReport(chatID int64, session *Session) error {
+	report := daily_report.NewDailyReport(uuid.Nil) // TODO: use real user ID
+	report.SleepTime = session.Answers.SleepTime
+	report.WakeTime = session.Answers.WakeTime
+	report.WorkedToday = session.Answers.WorkedToday
+	report.Menstruation = session.Answers.Menstruation
+	report.Fasting = session.Answers.Fasting
+	report.Activity = session.Answers.Activity
+	report.MealsSkipped = session.Answers.MealsSkipped
+	report.MedsIssues = session.Answers.MedsIssues
+	report.Mood = session.Answers.Mood
+	report.Migraine = session.Answers.Migraine
+	report.MigraineDose = session.Answers.MigraineDose
+	report.Libido = session.Answers.Libido
+
+	return c.dailyReportRepo.Create(c.ctx, report)
+}
+
+func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, dailyReportRepo daily_report.Repository) Bot {
+	return &ChatBot{
+		ctx:             ctx,
+		telegramBotApi:  bot,
+		sessionStore:    NewSessionStore(),
+		dailyReportRepo: dailyReportRepo,
 	}
-
-	bot, err := tgbotapi.NewBotAPI(config.BotToken)
-	if err != nil {
-		log.Panic(err)
-	}
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	chatBot.telegramBotApi = bot
-	chatBot.telegramBotApi.Debug = true
-
-	return chatBot
 }

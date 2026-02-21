@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"perezvonish/health-tracker/internal/entry-points/telegram_bot"
+	"perezvonish/health-tracker/internal/app"
 	"perezvonish/health-tracker/internal/infrastructure/database"
 	"perezvonish/health-tracker/internal/shared/config"
 	"syscall"
@@ -26,23 +26,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-	defer mongoDB.Close(ctx)
 
-	telegramChatBot := telegram_bot.NewChatBot(ctx, cfg.Telegram)
-	telegramChatBot.Start()
+	container := app.NewContainer(ctx, cfg, mongoDB)
+	container.TelegramBot.Start()
 
 	<-ctx.Done()
-	gracefulShutdown(mongoDB)
+	gracefulShutdown(container)
 }
 
-func gracefulShutdown(mongoDB *database.MongoDB) {
+func gracefulShutdown(container *app.Container) {
 	fmt.Println("\nShutdown signal received...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := mongoDB.Close(ctx); err != nil {
-		log.Printf("Error closing MongoDB connection: %v", err)
+	if err := container.Close(ctx); err != nil {
+		log.Printf("Error closing container: %v", err)
 	}
 
 	fmt.Println("Application stopped gracefully")
