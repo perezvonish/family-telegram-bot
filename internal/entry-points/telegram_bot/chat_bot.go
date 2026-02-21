@@ -126,11 +126,9 @@ func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, t
 		c.sendWithInlineKeyboard(chatID, "Все приемы пищи были?", multiSelectKeyboard(mealsOptions, session.Answers.MealsSkipped))
 
 	case 10:
-		raw := strings.TrimSpace(strings.ReplaceAll(text, ",", "."))
-		dose, err := strconv.ParseFloat(raw, 64)
-
-		if err != nil || dose <= 0 {
-			c.sendMessage(chatID, "Нужно ввести число в миллиграммах. Например: 200")
+		dose := strings.TrimSpace(text)
+		if dose == "" {
+			c.sendMessage(chatID, "Введите препарат и дозировку. Например: Ибуклин 600")
 			return
 		}
 
@@ -183,7 +181,7 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 
 		if value > 2 {
 			session.Step = 10
-			msg := tgbotapi.NewMessage(chatID, "Мигрень была больше 2-х баллов!😣 Введите название обезбола и дозировку в мг (пример: 'Ибуклин 400'):")
+			msg := tgbotapi.NewMessage(chatID, "Какой препарат принимала? (например: Ибуклин 600)")
 			msg.ReplyMarkup = removeKeyboard()
 			c.telegramBotApi.Send(msg)
 			return

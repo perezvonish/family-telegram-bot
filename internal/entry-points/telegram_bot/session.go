@@ -13,7 +13,7 @@ type HealthAnswers struct {
 	MedsIssues   []string `json:"medsIssues,omitempty"`
 	Mood         int      `json:"mood,omitempty"`
 	Migraine     int      `json:"migraine,omitempty"`
-	MigraineDose float64  `json:"migraineDose,omitempty"`
+	MigraineDose string   `json:"migraineDose,omitempty"`
 	Libido       int      `json:"libido,omitempty"`
 }
 

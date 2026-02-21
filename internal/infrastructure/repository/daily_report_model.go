@@ -23,7 +23,7 @@ type DailyReportModel struct {
 	MedsIssues   []string `bson:"meds_issues"`
 	Mood         int      `bson:"mood"`
 	Migraine     int      `bson:"migraine"`
-	MigraineDose float64  `bson:"migraine_dose,omitempty"`
+	MigraineDose string   `bson:"migraine_dose,omitempty"`
 	Libido       int      `bson:"libido"`
 }
 

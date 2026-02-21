@@ -21,7 +21,7 @@ type DailyReport struct {
 	MedsIssues   []string `json:"medsIssues"`
 	Mood         int      `json:"mood"`
 	Migraine     int      `json:"migraine"`
-	MigraineDose float64  `json:"migraineDose,omitempty"`
+	MigraineDose string   `json:"migraineDose,omitempty"`
 	Libido       int      `json:"libido"`
 }
 
