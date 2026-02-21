@@ -50,7 +50,7 @@ func (c *Container) initTelegramBot(ctx context.Context) {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	bot.Debug = true
 
-	c.TelegramBot = telegram_bot.NewChatBot(ctx, bot, c.DailyReportRepo)
+	c.TelegramBot = telegram_bot.NewChatBot(ctx, bot, c.UserRepo, c.DailyReportRepo)
 }
 
 func (c *Container) Close(ctx context.Context) error {

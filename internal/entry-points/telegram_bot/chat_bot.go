@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"perezvonish/health-tracker/internal/domain/daily_report"
+	"perezvonish/health-tracker/internal/domain/user"
 	"slices"
 	"strconv"
 	"strings"
@@ -22,6 +23,7 @@ type ChatBot struct {
 
 	telegramBotApi  *tgbotapi.BotAPI
 	sessionStore    *SessionStore
+	userRepo        user.Repository
 	dailyReportRepo daily_report.Repository
 }
 
@@ -58,9 +60,15 @@ func (c *ChatBot) startGettingUpdates() {
 
 func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 	chatID := message.Chat.ID
+	userID := message.From.ID
 	text := message.Text
 
 	log.Printf("[%s] %s", message.From.UserName, text)
+
+	if !c.isAuthorized(userID) {
+		log.Printf("Unauthorized user: %d", userID)
+		return
+	}
 
 	if text == "/start" || text == "/diary" {
 		c.enterDiaryScene(chatID)
@@ -135,10 +143,16 @@ func (c *ChatBot) handleTextStep(chatID int64, session *Session, text string) {
 
 func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 	chatID := callback.Message.Chat.ID
+	userID := callback.From.ID
 	messageID := callback.Message.MessageID
 	data := callback.Data
 
 	c.telegramBotApi.Request(tgbotapi.NewCallback(callback.ID, ""))
+
+	if !c.isAuthorized(userID) {
+		log.Printf("Unauthorized user: %d", userID)
+		return
+	}
 
 	session := c.sessionStore.Get(chatID)
 	if session == nil {
@@ -271,6 +285,11 @@ func (c *ChatBot) editMessageRemoveKeyboard(chatID int64, messageID int) {
 	c.telegramBotApi.Send(edit)
 }
 
+func (c *ChatBot) isAuthorized(telegramUserID int64) bool {
+	_, err := c.userRepo.FindByTelegramID(c.ctx, telegramUserID)
+	return err == nil
+}
+
 var telegramNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 func userIDFromTelegramChat(chatID int64) uuid.UUID {
@@ -296,11 +315,12 @@ func (c *ChatBot) saveDailyReport(chatID int64, session *Session) error {
 	return c.dailyReportRepo.Create(c.ctx, report)
 }
 
-func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, dailyReportRepo daily_report.Repository) Bot {
+func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, userRepo user.Repository, dailyReportRepo daily_report.Repository) Bot {
 	return &ChatBot{
 		ctx:             ctx,
 		telegramBotApi:  bot,
 		sessionStore:    NewSessionStore(),
+		userRepo:        userRepo,
 		dailyReportRepo: dailyReportRepo,
 	}
 }
