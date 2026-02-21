@@ -81,7 +81,7 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 
-	c.handleTextStep(chatID, session, text)
+	c.handleTextStep(chatID, userID, session, text)
 }
 
 func (c *ChatBot) enterDiaryScene(chatID int64) {
@@ -93,7 +93,7 @@ func (c *ChatBot) enterDiaryScene(chatID int64) {
 	c.telegramBotApi.Send(msg)
 }
 
-func (c *ChatBot) handleTextStep(chatID int64, session *Session, text string) {
+func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, text string) {
 	switch session.Step {
 	case 0:
 		session.Answers.SleepTime = text
@@ -181,31 +181,21 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 		value := c.parseScaleValue(data)
 		session.Answers.Migraine = value
 
-		if value <= 2 {
-			session.Step = 11
-			c.sendWithInlineKeyboard(chatID, "Либидо:", scaleKeyboard("libido", true))
-		} else {
+		if value > 2 {
 			session.Step = 10
 			msg := tgbotapi.NewMessage(chatID, "Введите дозировку в мг (например 400):")
 			msg.ReplyMarkup = removeKeyboard()
 			c.telegramBotApi.Send(msg)
+			return
 		}
+
+		session.Step = 11
+		c.sendWithInlineKeyboard(chatID, "Либидо:", scaleKeyboard("libido", true))
 
 	case 11:
 		value := c.parseScaleValue(data)
 		session.Answers.Libido = value
-		session.Step = 12
-
-		log.Printf("FINAL: %+v", session.Answers)
-
-		if err := c.saveDailyReport(userID, session); err != nil {
-			log.Printf("Failed to save daily report: %v", err)
-			c.sendMessage(chatID, "Ошибка сохранения. Попробуй ещё раз.")
-			return
-		}
-
-		c.sendMessage(chatID, "Готово ✅")
-		c.sessionStore.Delete(chatID)
+		c.finishSurvey(chatID, userID, session)
 	}
 }
 
@@ -310,6 +300,21 @@ func (c *ChatBot) saveDailyReport(telegramID int64, session *Session) error {
 	report.Libido = session.Answers.Libido
 
 	return c.dailyReportRepo.Create(c.ctx, report)
+}
+
+func (c *ChatBot) finishSurvey(chatID int64, userID int64, session *Session) {
+	session.Step = 12
+
+	log.Printf("FINAL: %+v", session.Answers)
+
+	if err := c.saveDailyReport(userID, session); err != nil {
+		log.Printf("Failed to save daily report: %v", err)
+		c.sendMessage(chatID, "Ошибка сохранения. Попробуй ещё раз.")
+		return
+	}
+
+	c.sendMessage(chatID, "Готово ✅")
+	c.sessionStore.Delete(chatID)
 }
 
 func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, userRepo user.Repository, dailyReportRepo daily_report.Repository) Bot {
