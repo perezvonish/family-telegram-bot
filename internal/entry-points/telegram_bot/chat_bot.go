@@ -86,11 +86,14 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 
 func (c *ChatBot) enterDiaryScene(chatID int64) {
 	session := c.sessionStore.Reset(chatID)
-	session.Step = 0
+	// TODO: временный перескок на шаг 3
+	session.Step = 1
+	c.sendWithKeyboard(chatID, "Вчера была менструация?", yesNoKeyboard())
 
-	msg := tgbotapi.NewMessage(chatID, "Во сколько вчера легла?")
-	msg.ReplyMarkup = sleepTimeKeyboard()
-	c.telegramBotApi.Send(msg)
+	// session.Step = 0
+	// msg := tgbotapi.NewMessage(chatID, "Во сколько вчера легла?")
+	// msg.ReplyMarkup = sleepTimeKeyboard()
+	// c.telegramBotApi.Send(msg)
 }
 
 func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, text string) {
