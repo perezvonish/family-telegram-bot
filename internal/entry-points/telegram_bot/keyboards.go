@@ -104,7 +104,8 @@ func multiSelectKeyboard(options []string, selected []string) tgbotapi.InlineKey
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: rows}
 }
 
-func scaleKeyboard(prefix string, isPositive bool) tgbotapi.InlineKeyboardMarkup {
+func scaleRangeKeyboard(prefix string, min, max int, isPositive bool) tgbotapi.InlineKeyboardMarkup {
+	count := max - min + 1
 	base := []string{"😣", "😕", "😐", "🙂", "😊", "😌", "💪", "🔥", "🚀", "🤯", "🌟"}
 
 	emojis := make([]string, len(base))
@@ -117,10 +118,11 @@ func scaleKeyboard(prefix string, isPositive bool) tgbotapi.InlineKeyboardMarkup
 	}
 
 	var buttons []tgbotapi.InlineKeyboardButton
-	for i := 0; i <= 10; i++ {
+	for i := 0; i < count; i++ {
+		value := min + i
 		buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(
-			fmt.Sprintf("%d %s", i, emojis[i]),
-			fmt.Sprintf("%s:%d", prefix, i),
+			fmt.Sprintf("%d %s", value, emojis[i]),
+			fmt.Sprintf("%s:%d", prefix, value),
 		))
 	}
 
@@ -134,6 +136,34 @@ func scaleKeyboard(prefix string, isPositive bool) tgbotapi.InlineKeyboardMarkup
 	}
 
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: rows}
+}
+
+func scaleKeyboard(prefix string, isPositive bool) tgbotapi.InlineKeyboardMarkup {
+	return scaleRangeKeyboard(prefix, 0, 10, isPositive)
+}
+
+func labeledScaleKeyboard(prefix string, labels []string) tgbotapi.InlineKeyboardMarkup {
+	var buttons []tgbotapi.InlineKeyboardButton
+	for i, label := range labels {
+		value := i + 1
+		buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(
+			fmt.Sprintf("%d %s", value, label),
+			fmt.Sprintf("%s:%d", prefix, value),
+		))
+	}
+	return tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{buttons},
+	}
+}
+
+func migraineSideKeyboard() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Двусторонняя", "mside:bilateral"),
+			tgbotapi.NewInlineKeyboardButtonData("Сильнее слева", "mside:left"),
+			tgbotapi.NewInlineKeyboardButtonData("Сильнее справа", "mside:right"),
+		),
+	)
 }
 
 func removeKeyboard() tgbotapi.ReplyKeyboardRemove {

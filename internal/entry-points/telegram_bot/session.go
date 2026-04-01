@@ -16,6 +16,15 @@ type HealthAnswers struct {
 	MigraineSide string   `json:"migraineSide,omitempty"`
 	MigraineDose string   `json:"migraineDose,omitempty"`
 	Libido       int      `json:"libido,omitempty"`
+
+	Extras        []string `json:"extras,omitempty"`
+	Anxiety       int      `json:"anxiety,omitempty"`
+	Energy        int      `json:"energy,omitempty"`
+	SleepQuality  int      `json:"sleepQuality,omitempty"`
+	MoodStability string   `json:"moodStability,omitempty"`
+	Relationship  int      `json:"relationship,omitempty"`
+	Closeness     int      `json:"closeness,omitempty"`
+	DayComment    string   `json:"dayComment,omitempty"`
 }
 
 type Session struct {
@@ -53,6 +62,7 @@ func (s *SessionStore) GetOrCreate(chatID int64) *Session {
 		Answers: HealthAnswers{
 			MealsSkipped: []string{},
 			MedsIssues:   []string{},
+			Extras:       []string{},
 		},
 	}
 	s.sessions[chatID] = session
@@ -68,6 +78,7 @@ func (s *SessionStore) Reset(chatID int64) *Session {
 		Answers: HealthAnswers{
 			MealsSkipped: []string{},
 			MedsIssues:   []string{},
+			Extras:       []string{},
 		},
 	}
 	s.sessions[chatID] = session

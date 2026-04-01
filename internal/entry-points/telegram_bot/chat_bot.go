@@ -304,8 +304,17 @@ func (c *ChatBot) saveDailyReport(telegramID int64, session *Session) error {
 	report.MedsIssues = session.Answers.MedsIssues
 	report.Mood = session.Answers.Mood
 	report.Migraine = session.Answers.Migraine
+	report.MigraineSide = session.Answers.MigraineSide
 	report.MigraineDose = session.Answers.MigraineDose
 	report.Libido = session.Answers.Libido
+	report.Extras = session.Answers.Extras
+	report.Anxiety = session.Answers.Anxiety
+	report.Energy = session.Answers.Energy
+	report.SleepQuality = session.Answers.SleepQuality
+	report.MoodStability = session.Answers.MoodStability
+	report.Relationship = session.Answers.Relationship
+	report.Closeness = session.Answers.Closeness
+	report.DayComment = session.Answers.DayComment
 
 	return c.dailyReportRepo.Create(c.ctx, report)
 }

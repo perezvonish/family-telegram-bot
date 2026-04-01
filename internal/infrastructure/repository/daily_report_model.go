@@ -23,26 +23,45 @@ type DailyReportModel struct {
 	MedsIssues   []string `bson:"meds_issues"`
 	Mood         int      `bson:"mood"`
 	Migraine     int      `bson:"migraine"`
+	MigraineSide string   `bson:"migraine_side,omitempty"`
 	MigraineDose string   `bson:"migraine_dose,omitempty"`
 	Libido       int      `bson:"libido"`
+
+	Extras        []string `bson:"extras,omitempty"`
+	Anxiety       int      `bson:"anxiety"`
+	Energy        int      `bson:"energy"`
+	SleepQuality  int      `bson:"sleep_quality"`
+	MoodStability string   `bson:"mood_stability,omitempty"`
+	Relationship  int      `bson:"relationship"`
+	Closeness     int      `bson:"closeness"`
+	DayComment    string   `bson:"day_comment,omitempty"`
 }
 
 func ToDailyReportModel(entity *daily_report.DailyReport) *DailyReportModel {
 	return &DailyReportModel{
-		UserID:       entity.UserID.String(),
-		CreatedAt:    entity.CreatedAt,
-		ReportDate:   entity.ReportDate,
-		SleepTime:    entity.SleepTime,
-		WakeTime:     entity.WakeTime,
-		WorkedToday:  entity.WorkedToday,
-		Menstruation: entity.Menstruation,
-		Fasting:      entity.Fasting,
-		Activity:     entity.Activity,
-		MealsSkipped: entity.MealsSkipped,
-		MedsIssues:   entity.MedsIssues,
-		Mood:         entity.Mood,
-		Migraine:     entity.Migraine,
-		MigraineDose: entity.MigraineDose,
-		Libido:       entity.Libido,
+		UserID:        entity.UserID.String(),
+		CreatedAt:     entity.CreatedAt,
+		ReportDate:    entity.ReportDate,
+		SleepTime:     entity.SleepTime,
+		WakeTime:      entity.WakeTime,
+		WorkedToday:   entity.WorkedToday,
+		Menstruation:  entity.Menstruation,
+		Fasting:       entity.Fasting,
+		Activity:      entity.Activity,
+		MealsSkipped:  entity.MealsSkipped,
+		MedsIssues:    entity.MedsIssues,
+		Mood:          entity.Mood,
+		Migraine:      entity.Migraine,
+		MigraineSide:  entity.MigraineSide,
+		MigraineDose:  entity.MigraineDose,
+		Libido:        entity.Libido,
+		Extras:        entity.Extras,
+		Anxiety:       entity.Anxiety,
+		Energy:        entity.Energy,
+		SleepQuality:  entity.SleepQuality,
+		MoodStability: entity.MoodStability,
+		Relationship:  entity.Relationship,
+		Closeness:     entity.Closeness,
+		DayComment:    entity.DayComment,
 	}
 }
