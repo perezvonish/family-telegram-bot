@@ -271,6 +271,19 @@ func (c *ChatBot) sendWithKeyboard(chatID int64, text string, keyboard tgbotapi.
 	c.telegramBotApi.Send(msg)
 }
 
+func (c *ChatBot) sendPhotoWithInlineKeyboard(chatID int64, assetPath string, caption string, keyboard tgbotapi.InlineKeyboardMarkup) {
+	data, err := scaleAssets.ReadFile(assetPath)
+	if err != nil {
+		log.Printf("Failed to read asset %s: %v", assetPath, err)
+		c.sendWithInlineKeyboard(chatID, caption, keyboard)
+		return
+	}
+	photo := tgbotapi.NewPhoto(chatID, tgbotapi.FileBytes{Name: assetPath, Bytes: data})
+	photo.Caption = caption
+	photo.ReplyMarkup = keyboard
+	c.telegramBotApi.Send(photo)
+}
+
 func (c *ChatBot) sendWithInlineKeyboard(chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ReplyMarkup = keyboard
