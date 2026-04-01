@@ -166,6 +166,24 @@ func migraineSideKeyboard() tgbotapi.InlineKeyboardMarkup {
 	)
 }
 
+func stabilityKeyboard() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Ровное", "stability:ровное"),
+			tgbotapi.NewInlineKeyboardButtonData("Были качели", "stability:качели"),
+			tgbotapi.NewInlineKeyboardButtonData("Резкие перепады", "stability:перепады"),
+		),
+	)
+}
+
+func skipKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Пропустить"),
+		),
+	)
+}
+
 func removeKeyboard() tgbotapi.ReplyKeyboardRemove {
 	return tgbotapi.NewRemoveKeyboard(true)
 }

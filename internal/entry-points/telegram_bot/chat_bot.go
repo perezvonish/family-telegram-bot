@@ -13,9 +13,15 @@ import (
 )
 
 var (
-	mealsOptions = []string{"Завтрак", "Перекус", "Обед", "Ужин"}
-	medsOptions  = []string{"Мальтофер", "Витамин Д", "Метилфолат", "Витамин B12", "Эвика"}
-	libidoLabels = []string{"Отсутствует", "Слабое", "Среднее", "Повышенное", "Высокое"}
+	mealsOptions       = []string{"Завтрак", "Перекус", "Обед", "Ужин"}
+	medsOptions        = []string{"Мальтофер", "Витамин Д", "Метилфолат", "Витамин B12", "Эвика"}
+	extrasOptions      = []string{"Кофе", "Матча", "Алкоголь", "Сигареты"}
+	sleepLabels        = []string{"Почти не спала", "Плохой", "Средний", "Хороший", "Отличный"}
+	anxietyLabels      = []string{"Нет", "Слабая", "Умеренная", "Сильная", "Парализующая"}
+	energyLabels       = []string{"Опустошение", "Низкая", "Средняя", "Хорошая", "Заряжен"}
+	libidoLabels       = []string{"Отсутствует", "Слабое", "Среднее", "Повышенное", "Высокое"}
+	relationshipLabels = []string{"Очень недовольна", "Скорее недовольна", "Нейтрально", "В целом хорошо", "Очень довольна"}
+	closenessLabels    = []string{"Изолированность", "Дистанция", "Нейтрально", "Близко", "Очень близко"}
 )
 
 type ChatBot struct {
@@ -123,16 +129,21 @@ func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, t
 		session.Step = 6
 		c.sendWithInlineKeyboard(chatID, "Все приемы пищи были?", multiSelectKeyboard(mealsOptions, session.Answers.MealsSkipped))
 
-	case 11:
+	case 19:
 		dose := strings.TrimSpace(text)
 		if dose == "" {
 			c.sendMessage(chatID, "Введи препарат и дозировку. Например: Ибуклин 600")
 			return
 		}
-
 		session.Answers.MigraineDose = dose
-		session.Step = 12
-		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо:", labeledScaleKeyboard("libido", libidoLabels))
+		session.Step = 20
+		c.sendWithKeyboard(chatID, "Есть что-то, что хочется отметить про день?", skipKeyboard())
+
+	case 20:
+		if text != "Пропустить" && text != "/skip" {
+			session.Answers.DayComment = text
+		}
+		c.finishSurvey(chatID, userID, session)
 	}
 }
 
@@ -164,46 +175,75 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 
 	case 7:
 		c.handleMultiSelect(chatID, messageID, session, "medsIssues", medsOptions, data, 8, func() {
-			c.sendWithInlineKeyboard(chatID, "Какое у тебя было настроение:", scaleRangeKeyboard("mood", 1, 10, true))
+			c.sendWithInlineKeyboard(chatID, "Что употребляла сегодня?", multiSelectKeyboard(extrasOptions, session.Answers.Extras))
 		})
 
 	case 8:
-		value := c.parseScaleValue(data)
-		session.Answers.Mood = value
-		session.Step = 9
-		c.sendWithInlineKeyboard(chatID, "Оцени мигрень (0 - не было | 5 - вызываем скорую):", scaleRangeKeyboard("migraine", 0, 5, false))
+		c.handleMultiSelect(chatID, messageID, session, "extras", extrasOptions, data, 9, func() {
+			c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/sleep_quality.jpg", "Оцени качество сна:", labeledScaleKeyboard("sleep", sleepLabels))
+		})
 
 	case 9:
-		value := c.parseScaleValue(data)
-		session.Answers.Migraine = value
+		session.Answers.SleepQuality = c.parseScaleValue(data)
+		session.Step = 10
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/mood.jpg", "Оцени настроение за день:", scaleRangeKeyboard("mood", 1, 10, true))
 
-		if value >= 1 {
-			session.Step = 10
+	case 10:
+		session.Answers.Mood = c.parseScaleValue(data)
+		session.Step = 11
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/mood_stability.jpg", "Как менялось настроение в течение дня?", stabilityKeyboard())
+
+	case 11:
+		session.Answers.MoodStability = strings.TrimPrefix(data, "stability:")
+		session.Step = 12
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/anxiety.jpg", "Оцени тревогу:", labeledScaleKeyboard("anxiety", anxietyLabels))
+
+	case 12:
+		session.Answers.Anxiety = c.parseScaleValue(data)
+		session.Step = 13
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/energy.jpg", "Оцени уровень энергии:", labeledScaleKeyboard("energy", energyLabels))
+
+	case 13:
+		session.Answers.Energy = c.parseScaleValue(data)
+		session.Step = 14
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/libido.jpg", "Оцени уровень либидо:", labeledScaleKeyboard("libido", libidoLabels))
+
+	case 14:
+		session.Answers.Libido = c.parseScaleValue(data)
+		session.Step = 15
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/relationship.jpg", "Оцени удовлетворённость отношениями:", labeledScaleKeyboard("rel", relationshipLabels))
+
+	case 15:
+		session.Answers.Relationship = c.parseScaleValue(data)
+		session.Step = 16
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/closeness.jpg", "Оцени близость с партнёром:", labeledScaleKeyboard("close", closenessLabels))
+
+	case 16:
+		session.Answers.Closeness = c.parseScaleValue(data)
+		session.Step = 17
+		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/migraine.jpg", "Оцени мигрень (0 - не было | 5 - вызываем скорую):", scaleRangeKeyboard("migraine", 0, 5, false))
+
+	case 17:
+		session.Answers.Migraine = c.parseScaleValue(data)
+		if session.Answers.Migraine >= 1 {
+			session.Step = 18
 			c.sendWithInlineKeyboard(chatID, "Где локализована боль?", migraineSideKeyboard())
 			return
 		}
+		session.Step = 20
+		c.sendWithKeyboard(chatID, "Есть что-то, что хочется отметить про день?", skipKeyboard())
 
-		session.Step = 12
-		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо:", labeledScaleKeyboard("libido", libidoLabels))
-
-	case 10:
+	case 18:
 		session.Answers.MigraineSide = strings.TrimPrefix(data, "mside:")
-
 		if session.Answers.Migraine >= 2 {
-			session.Step = 11
+			session.Step = 19
 			msg := tgbotapi.NewMessage(chatID, "Какой препарат принимала? (например: Ибуклин 600)")
 			msg.ReplyMarkup = removeKeyboard()
 			c.telegramBotApi.Send(msg)
 			return
 		}
-
-		session.Step = 12
-		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо:", labeledScaleKeyboard("libido", libidoLabels))
-
-	case 12:
-		value := c.parseScaleValue(data)
-		session.Answers.Libido = value
-		c.finishSurvey(chatID, userID, session)
+		session.Step = 20
+		c.sendWithKeyboard(chatID, "Есть что-то, что хочется отметить про день?", skipKeyboard())
 	}
 }
 
@@ -223,6 +263,8 @@ func (c *ChatBot) handleMultiSelect(chatID int64, messageID int, session *Sessio
 		selected = session.Answers.MealsSkipped
 	} else if field == "medsIssues" {
 		selected = session.Answers.MedsIssues
+	} else if field == "extras" {
+		selected = session.Answers.Extras
 	}
 
 	edit := tgbotapi.NewEditMessageReplyMarkup(chatID, messageID, multiSelectKeyboard(options, selected))
@@ -236,6 +278,8 @@ func (c *ChatBot) toggleValue(session *Session, field, value string) {
 		arr = &session.Answers.MealsSkipped
 	} else if field == "medsIssues" {
 		arr = &session.Answers.MedsIssues
+	} else if field == "extras" {
+		arr = &session.Answers.Extras
 	} else {
 		return
 	}
@@ -333,7 +377,7 @@ func (c *ChatBot) saveDailyReport(telegramID int64, session *Session) error {
 }
 
 func (c *ChatBot) finishSurvey(chatID int64, userID int64, session *Session) {
-	session.Step = 13
+	session.Step = 21
 
 	log.Printf("FINAL: %+v", session.Answers)
 
