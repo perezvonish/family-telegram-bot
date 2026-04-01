@@ -47,8 +47,12 @@ func (c *ChatBot) Stop() {
 }
 
 func (c *ChatBot) startGettingUpdates() {
+	// Удаляем webhook если он был установлен — long polling и webhook несовместимы
+	c.telegramBotApi.Request(tgbotapi.DeleteWebhookConfig{DropPendingUpdates: false})
+
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
+	u.AllowedUpdates = []string{"message", "callback_query"} // явно, не null
 	updates := c.telegramBotApi.GetUpdatesChan(u)
 
 	for update := range updates {

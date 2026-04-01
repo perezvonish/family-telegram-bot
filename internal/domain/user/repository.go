@@ -6,4 +6,5 @@ import (
 
 type Repository interface {
 	FindByTelegramID(ctx context.Context, telegramID int64) (*User, error)
+	FindAll(ctx context.Context) ([]*User, error)
 }

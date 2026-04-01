@@ -24,6 +24,25 @@ func NewUserRepository(db *database.MongoDB) *UserRepository {
 	}
 }
 
+func (r *UserRepository) FindAll(ctx context.Context) ([]*user.User, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var models []UserModel
+	if err = cursor.All(ctx, &models); err != nil {
+		return nil, err
+	}
+
+	result := make([]*user.User, 0, len(models))
+	for _, m := range models {
+		result = append(result, m.ToEntity())
+	}
+	return result, nil
+}
+
 func (r *UserRepository) FindByTelegramID(ctx context.Context, telegramID int64) (*user.User, error) {
 	var model UserModel
 

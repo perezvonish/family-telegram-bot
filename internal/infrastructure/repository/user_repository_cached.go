@@ -21,6 +21,10 @@ func NewCachedUserRepository(repo user.Repository) *CachedUserRepository {
 	}
 }
 
+func (r *CachedUserRepository) FindAll(ctx context.Context) ([]*user.User, error) {
+	return r.repo.FindAll(ctx)
+}
+
 func (r *CachedUserRepository) FindByTelegramID(ctx context.Context, telegramID int64) (*user.User, error) {
 	if cached, ok := r.cache.Get(telegramID); ok {
 		return cached, nil
