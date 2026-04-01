@@ -9,6 +9,21 @@ import (
 	"perezvonish/health-tracker/internal/domain/daily_report"
 )
 
+// ─── /help ───────────────────────────────────────────────────────────────────
+
+func (c *ChatBot) handleHelpCommand(chatID int64) {
+	text := `📋 Доступные команды:
+
+/diary — заполнить дневник здоровья
+/today — итог сегодняшнего дня с ИОС и сравнением с нормой
+/week — спарклайны и режимный score за последние 7 дней
+/stats — средние показатели, корреляции, лучшие и тяжёлые дни за 30 дней
+/stats 90 — то же за 90 дней
+/migraine — статистика мигреней и топ триггеров за 60 дней
+/help — это сообщение`
+	c.sendMessage(chatID, text)
+}
+
 // ─── /today ──────────────────────────────────────────────────────────────────
 
 func (c *ChatBot) handleTodayCommand(chatID int64, telegramUserID int64) {
@@ -73,6 +88,8 @@ func (c *ChatBot) handleWeekCommand(chatID int64, telegramUserID int64) {
 		c.sendMessage(chatID, "Не могу найти пользователя")
 		return
 	}
+
+	fmt.Println(u)
 
 	to := time.Now().UTC().Truncate(24 * time.Hour)
 	from := to.AddDate(0, 0, -6)

@@ -81,6 +81,11 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 
+	if text == "/help" {
+		c.handleHelpCommand(chatID)
+		return
+	}
+
 	switch {
 	case text == "/today":
 		c.handleTodayCommand(chatID, userID)
