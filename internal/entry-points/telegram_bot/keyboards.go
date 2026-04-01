@@ -19,17 +19,17 @@ func yesNoKeyboard() tgbotapi.ReplyKeyboardMarkup {
 func sleepTimeKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("раньше 22"),
-			tgbotapi.NewKeyboardButton("22"),
-			tgbotapi.NewKeyboardButton("23"),
+			tgbotapi.NewKeyboardButton("раньше 22:00"),
+			tgbotapi.NewKeyboardButton("22:00"),
+			tgbotapi.NewKeyboardButton("23:00"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("00"),
-			tgbotapi.NewKeyboardButton("01"),
-			tgbotapi.NewKeyboardButton("02"),
+			tgbotapi.NewKeyboardButton("00:00"),
+			tgbotapi.NewKeyboardButton("01:00"),
+			tgbotapi.NewKeyboardButton("02:00"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("позже 2"),
+			tgbotapi.NewKeyboardButton("позже 2:00"),
 		),
 	)
 }
@@ -37,14 +37,14 @@ func sleepTimeKeyboard() tgbotapi.ReplyKeyboardMarkup {
 func wakeTimeKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("раньше 08"),
-			tgbotapi.NewKeyboardButton("08"),
-			tgbotapi.NewKeyboardButton("09"),
+			tgbotapi.NewKeyboardButton("раньше 9:00"),
+			tgbotapi.NewKeyboardButton("9:00"),
+			tgbotapi.NewKeyboardButton("10:00"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("10"),
-			tgbotapi.NewKeyboardButton("11"),
-			tgbotapi.NewKeyboardButton("позже 11"),
+			tgbotapi.NewKeyboardButton("11:00"),
+			tgbotapi.NewKeyboardButton("12:00"),
+			tgbotapi.NewKeyboardButton("позже 12:00"),
 		),
 	)
 }
@@ -55,7 +55,7 @@ func fastingKeyboard() tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton("нет"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("да, меньше часа"),
+			tgbotapi.NewKeyboardButton("около часа"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("2–3 часа"),
