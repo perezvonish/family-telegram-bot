@@ -4,6 +4,7 @@ import (
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"time"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -35,6 +36,36 @@ type DailyReportModel struct {
 	Relationship  int      `bson:"relationship"`
 	Closeness     int      `bson:"closeness"`
 	DayComment    string   `bson:"day_comment,omitempty"`
+}
+
+func toDailyReportEntity(m *DailyReportModel) *daily_report.DailyReport {
+	userID, _ := uuid.Parse(m.UserID)
+	return &daily_report.DailyReport{
+		UserID:        userID,
+		CreatedAt:     m.CreatedAt,
+		ReportDate:    m.ReportDate,
+		SleepTime:     m.SleepTime,
+		WakeTime:      m.WakeTime,
+		WorkedToday:   m.WorkedToday,
+		Menstruation:  m.Menstruation,
+		Fasting:       m.Fasting,
+		Activity:      m.Activity,
+		MealsSkipped:  m.MealsSkipped,
+		MedsIssues:    m.MedsIssues,
+		Mood:          m.Mood,
+		Migraine:      m.Migraine,
+		MigraineSide:  m.MigraineSide,
+		MigraineDose:  m.MigraineDose,
+		Libido:        m.Libido,
+		Extras:        m.Extras,
+		Anxiety:       m.Anxiety,
+		Energy:        m.Energy,
+		SleepQuality:  m.SleepQuality,
+		MoodStability: m.MoodStability,
+		Relationship:  m.Relationship,
+		Closeness:     m.Closeness,
+		DayComment:    m.DayComment,
+	}
 }
 
 func ToDailyReportModel(entity *daily_report.DailyReport) *DailyReportModel {
