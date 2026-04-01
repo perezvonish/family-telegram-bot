@@ -191,7 +191,7 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 	case 10:
 		session.Answers.Mood = c.parseScaleValue(data)
 		session.Step = 11
-		c.sendPhotoWithInlineKeyboard(chatID, "assets/scales/mood_stability.jpg", "Как менялось настроение в течение дня?", stabilityKeyboard())
+		c.sendWithInlineKeyboard(chatID, "Как менялось настроение в течение дня?", stabilityKeyboard())
 
 	case 11:
 		session.Answers.MoodStability = strings.TrimPrefix(data, "stability:")
