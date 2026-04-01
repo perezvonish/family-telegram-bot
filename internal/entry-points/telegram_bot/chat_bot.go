@@ -81,6 +81,26 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 
+	switch {
+	case text == "/today":
+		c.handleTodayCommand(chatID, userID)
+		return
+	case text == "/week":
+		c.handleWeekCommand(chatID, userID)
+		return
+	case text == "/migraine":
+		c.handleMigraineCommand(chatID, userID)
+		return
+	case strings.HasPrefix(text, "/stats"):
+		days := 30
+		parts := strings.Fields(text)
+		if len(parts) > 1 {
+			days, _ = strconv.Atoi(parts[1])
+		}
+		c.handleStatsCommand(chatID, userID, days)
+		return
+	}
+
 	session := c.sessionStore.Get(chatID)
 	if session == nil || session.Step < 0 {
 		msg := tgbotapi.NewMessage(chatID, "Используй /diary чтобы начать дневник здоровья")
