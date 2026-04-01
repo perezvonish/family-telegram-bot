@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	mealsOptions = []string{"Завтрак", "Обед", "Ужин"}
-	medsOptions  = []string{"Венлаксор | Утро", "Венлаксор | Вечер", "Триттико"}
+	mealsOptions = []string{"Завтрак", "Перекус", "Обед", "Ужин"}
+	medsOptions  = []string{"Мальтофер", "Витамин Д", "Метилфолат", "Витамин B12", "Эвика"}
+	libidoLabels = []string{"Отсутствует", "Слабое", "Среднее", "Повышенное", "Высокое"}
 )
 
 type ChatBot struct {
@@ -122,7 +123,7 @@ func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, t
 		session.Step = 6
 		c.sendWithInlineKeyboard(chatID, "Все приемы пищи были?", multiSelectKeyboard(mealsOptions, session.Answers.MealsSkipped))
 
-	case 10:
+	case 11:
 		dose := strings.TrimSpace(text)
 		if dose == "" {
 			c.sendMessage(chatID, "Введи препарат и дозировку. Например: Ибуклин 600")
@@ -130,8 +131,8 @@ func (c *ChatBot) handleTextStep(chatID int64, userID int64, session *Session, t
 		}
 
 		session.Answers.MigraineDose = dose
-		session.Step = 11
-		c.sendWithInlineKeyboard(chatID, "Либидо:", scaleKeyboard("libido", true))
+		session.Step = 12
+		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо:", labeledScaleKeyboard("libido", libidoLabels))
 	}
 }
 
@@ -163,31 +164,43 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 
 	case 7:
 		c.handleMultiSelect(chatID, messageID, session, "medsIssues", medsOptions, data, 8, func() {
-			c.sendWithInlineKeyboard(chatID, "Какое у тебя было настроение:", scaleKeyboard("mood", true))
+			c.sendWithInlineKeyboard(chatID, "Какое у тебя было настроение:", scaleRangeKeyboard("mood", 1, 10, true))
 		})
 
 	case 8:
 		value := c.parseScaleValue(data)
 		session.Answers.Mood = value
 		session.Step = 9
-		c.sendWithInlineKeyboard(chatID, "Оцени мигрень (0 - не было | 10 - вызываем скорую):", scaleKeyboard("migraine", false))
+		c.sendWithInlineKeyboard(chatID, "Оцени мигрень (0 - не было | 5 - вызываем скорую):", scaleRangeKeyboard("migraine", 0, 5, false))
 
 	case 9:
 		value := c.parseScaleValue(data)
 		session.Answers.Migraine = value
 
-		if value > 2 {
+		if value >= 1 {
 			session.Step = 10
+			c.sendWithInlineKeyboard(chatID, "Где локализована боль?", migraineSideKeyboard())
+			return
+		}
+
+		session.Step = 12
+		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо:", labeledScaleKeyboard("libido", libidoLabels))
+
+	case 10:
+		session.Answers.MigraineSide = strings.TrimPrefix(data, "mside:")
+
+		if session.Answers.Migraine >= 2 {
+			session.Step = 11
 			msg := tgbotapi.NewMessage(chatID, "Какой препарат принимала? (например: Ибуклин 600)")
 			msg.ReplyMarkup = removeKeyboard()
 			c.telegramBotApi.Send(msg)
 			return
 		}
 
-		session.Step = 11
-		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо (0 - что такое секс? | 10 - я тебя сама сейчас трахну):", scaleKeyboard("libido", true))
+		session.Step = 12
+		c.sendWithInlineKeyboard(chatID, "Оцени уровень либидо:", labeledScaleKeyboard("libido", libidoLabels))
 
-	case 11:
+	case 12:
 		value := c.parseScaleValue(data)
 		session.Answers.Libido = value
 		c.finishSurvey(chatID, userID, session)
@@ -298,7 +311,7 @@ func (c *ChatBot) saveDailyReport(telegramID int64, session *Session) error {
 }
 
 func (c *ChatBot) finishSurvey(chatID int64, userID int64, session *Session) {
-	session.Step = 12
+	session.Step = 13
 
 	log.Printf("FINAL: %+v", session.Answers)
 
