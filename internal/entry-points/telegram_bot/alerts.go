@@ -55,6 +55,7 @@ func (c *ChatBot) runDailyAlerts() {
 		c.checkMigraineFollowup(u, last7)
 		c.checkMedStreakCelebration(u, last7)
 		c.checkWeeklySundayInsight(u)
+		c.checkPillsForUser(u.TelegramID, u.TelegramID)
 	}
 }
 

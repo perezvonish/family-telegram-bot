@@ -37,6 +37,7 @@ type ChatBot struct {
 
 func (c *ChatBot) Start() {
 	go c.startGettingUpdates()
+	go c.startAlertWorker()
 
 	<-c.ctx.Done()
 	log.Println("ChatBot is shutting down")
@@ -441,6 +442,8 @@ func (c *ChatBot) finishSurvey(chatID int64, userID int64, session *Session) {
 
 	c.sendMessage(chatID, "Готово ✅")
 	c.sessionStore.Delete(chatID)
+
+	go c.checkPillsForUser(chatID, userID)
 }
 
 func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, userRepo user.Repository, dailyReportRepo daily_report.Repository, pillRepo pill_tracker.Repository) Bot {
