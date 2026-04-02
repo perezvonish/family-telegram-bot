@@ -92,7 +92,7 @@ func (s *SessionStore) Reset(chatID int64) *Session {
 
 	session := &Session{
 		Scene: SceneDiary,
-		Step:  0,
+		Step:  -1,
 		Answers: HealthAnswers{
 			MealsSkipped: []string{},
 			MedsIssues:   []string{},
@@ -106,9 +106,11 @@ func (s *SessionStore) Reset(chatID int64) *Session {
 func (s *SessionStore) ResetPills(chatID int64) *Session {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	session := &Session{
-		Scene: ScenePills,
-		Step:  0,
+		Scene:      ScenePills,
+		Step:       -1,
+		PillsSetup: PillSetupAnswers{},
 	}
 	s.sessions[chatID] = session
 	return session

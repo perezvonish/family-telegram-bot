@@ -83,34 +83,37 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 
-	if text == "/start" || text == "/diary" {
+	// Нормализуем команду: убираем слэш и всё после пробела/@ для сравнения
+	cmd := strings.ToLower(strings.TrimPrefix(text, "/"))
+	if idx := strings.IndexAny(cmd, " @"); idx != -1 {
+		cmd = cmd[:idx]
+	}
+
+	switch cmd {
+	case "start", "diary":
 		c.enterDiaryScene(chatID)
 		return
-	}
-
-	if text == "/pills" {
+	case "pills":
 		c.handlePillsCommand(chatID, userID)
 		return
-	}
-
-	if text == "/help" {
+	case "help":
 		c.handleHelpCommand(chatID)
 		return
-	}
-
-	switch {
-	case text == "/today":
+	case "today":
 		c.handleTodayCommand(chatID, userID)
 		return
-	case text == "/week":
+	case "week":
 		c.handleWeekCommand(chatID, userID)
 		return
-	case text == "/migraine":
+	case "migraine":
 		c.handleMigraineCommand(chatID, userID)
 		return
-	case strings.HasPrefix(text, "/stats"):
+	}
+
+	// /stats и stats могут идти с аргументом: "/stats 90" или "stats 90"
+	if cmd == "stats" || strings.HasPrefix(cmd, "stats ") {
 		days := 30
-		parts := strings.Fields(text)
+		parts := strings.Fields(cmd)
 		if len(parts) > 1 {
 			days, _ = strconv.Atoi(parts[1])
 		}
@@ -119,14 +122,16 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 	}
 
 	session := c.sessionStore.Get(chatID)
-	if session == nil || session.Step < 0 {
-		msg := tgbotapi.NewMessage(chatID, "Используй /diary чтобы начать дневник здоровья")
-		c.telegramBotApi.Send(msg)
+
+	// Проверяем pills-сцену ДО проверки step < 0, чтобы pills-флоу не прерывался
+	if session != nil && session.Scene == ScenePills {
+		c.handlePillsTextStep(chatID, userID, session, text)
 		return
 	}
 
-	if session.Scene == ScenePills {
-		c.handlePillsTextStep(chatID, userID, session, text)
+	if session == nil || session.Step < 0 {
+		msg := tgbotapi.NewMessage(chatID, "Используй /diary чтобы начать дневник здоровья")
+		c.telegramBotApi.Send(msg)
 		return
 	}
 
