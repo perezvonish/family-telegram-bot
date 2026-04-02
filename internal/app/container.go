@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"perezvonish/health-tracker/internal/domain/daily_report"
+	"perezvonish/health-tracker/internal/domain/pill_tracker"
 	"perezvonish/health-tracker/internal/domain/user"
 	"perezvonish/health-tracker/internal/entry-points/telegram_bot"
 	"perezvonish/health-tracker/internal/infrastructure/database"
@@ -19,6 +20,7 @@ type Container struct {
 
 	UserRepo        user.Repository
 	DailyReportRepo daily_report.Repository
+	PillTrackerRepo pill_tracker.Repository
 
 	TelegramBot telegram_bot.Bot
 }
@@ -40,6 +42,7 @@ func (c *Container) initRepositories() {
 	c.UserRepo = repository.NewCachedUserRepository(userRepo)
 
 	c.DailyReportRepo = repository.NewDailyReportRepository(c.MongoDB)
+	c.PillTrackerRepo = repository.NewPillTrackerRepository(c.MongoDB)
 }
 
 func (c *Container) initTelegramBot(ctx context.Context) {
@@ -50,7 +53,7 @@ func (c *Container) initTelegramBot(ctx context.Context) {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	bot.Debug = true
 
-	c.TelegramBot = telegram_bot.NewChatBot(ctx, bot, c.UserRepo, c.DailyReportRepo)
+	c.TelegramBot = telegram_bot.NewChatBot(ctx, bot, c.UserRepo, c.DailyReportRepo, c.PillTrackerRepo)
 }
 
 func (c *Container) Close(ctx context.Context) error {

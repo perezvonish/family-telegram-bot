@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"perezvonish/health-tracker/internal/domain/daily_report"
+	"perezvonish/health-tracker/internal/domain/pill_tracker"
 	"perezvonish/health-tracker/internal/domain/user"
 	"slices"
 	"strconv"
@@ -31,6 +32,7 @@ type ChatBot struct {
 	sessionStore    *SessionStore
 	userRepo        user.Repository
 	dailyReportRepo daily_report.Repository
+	pillRepo        pill_tracker.Repository
 }
 
 func (c *ChatBot) Start() {
@@ -420,12 +422,13 @@ func (c *ChatBot) finishSurvey(chatID int64, userID int64, session *Session) {
 	c.sessionStore.Delete(chatID)
 }
 
-func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, userRepo user.Repository, dailyReportRepo daily_report.Repository) Bot {
+func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, userRepo user.Repository, dailyReportRepo daily_report.Repository, pillRepo pill_tracker.Repository) Bot {
 	return &ChatBot{
 		ctx:             ctx,
 		telegramBotApi:  bot,
 		sessionStore:    NewSessionStore(),
 		userRepo:        userRepo,
 		dailyReportRepo: dailyReportRepo,
+		pillRepo:        pillRepo,
 	}
 }
