@@ -87,6 +87,11 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 
+	if text == "/pills" {
+		c.handlePillsCommand(chatID, userID)
+		return
+	}
+
 	if text == "/help" {
 		c.handleHelpCommand(chatID)
 		return
@@ -116,6 +121,11 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 	if session == nil || session.Step < 0 {
 		msg := tgbotapi.NewMessage(chatID, "Используй /diary чтобы начать дневник здоровья")
 		c.telegramBotApi.Send(msg)
+		return
+	}
+
+	if session.Scene == ScenePills {
+		c.handlePillsTextStep(chatID, userID, session, text)
 		return
 	}
 
@@ -188,6 +198,11 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 
 	if !c.isAuthorized(userID) {
 		log.Printf("Unauthorized user: %d", userID)
+		return
+	}
+
+	if strings.HasPrefix(data, "pills:") {
+		c.handlePillsCallback(chatID, userID, messageID, data)
 		return
 	}
 
@@ -362,6 +377,12 @@ func (c *ChatBot) sendPhotoWithInlineKeyboard(chatID int64, assetPath string, ca
 func (c *ChatBot) sendWithInlineKeyboard(chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ReplyMarkup = keyboard
+	c.telegramBotApi.Send(msg)
+}
+
+func (c *ChatBot) sendRemovingKeyboard(chatID int64, text string) {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = removeKeyboard()
 	c.telegramBotApi.Send(msg)
 }
 
