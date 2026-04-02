@@ -2,6 +2,20 @@ package telegram_bot
 
 import "sync"
 
+type SceneType string
+
+const (
+	SceneDiary SceneType = "diary"
+	ScenePills SceneType = "pills"
+)
+
+type PillSetupAnswers struct {
+	EditingID string
+	Name      string
+	Total     int
+	DailyDose float64
+}
+
 type HealthAnswers struct {
 	SleepTime    string   `json:"sleepTime,omitempty"`
 	WakeTime     string   `json:"wakeTime,omitempty"`
@@ -28,8 +42,10 @@ type HealthAnswers struct {
 }
 
 type Session struct {
-	Step    int
-	Answers HealthAnswers
+	Scene      SceneType
+	Step       int
+	Answers    HealthAnswers
+	PillsSetup PillSetupAnswers
 }
 
 type SessionStore struct {
@@ -58,7 +74,8 @@ func (s *SessionStore) GetOrCreate(chatID int64) *Session {
 	}
 
 	session := &Session{
-		Step: -1,
+		Scene: SceneDiary,
+		Step:  -1,
 		Answers: HealthAnswers{
 			MealsSkipped: []string{},
 			MedsIssues:   []string{},
@@ -74,12 +91,24 @@ func (s *SessionStore) Reset(chatID int64) *Session {
 	defer s.mu.Unlock()
 
 	session := &Session{
-		Step: 0,
+		Scene: SceneDiary,
+		Step:  0,
 		Answers: HealthAnswers{
 			MealsSkipped: []string{},
 			MedsIssues:   []string{},
 			Extras:       []string{},
 		},
+	}
+	s.sessions[chatID] = session
+	return session
+}
+
+func (s *SessionStore) ResetPills(chatID int64) *Session {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	session := &Session{
+		Scene: ScenePills,
+		Step:  0,
 	}
 	s.sessions[chatID] = session
 	return session
