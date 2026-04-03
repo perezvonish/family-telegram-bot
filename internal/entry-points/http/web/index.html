@@ -236,10 +236,23 @@
       timelineBody: document.getElementById("timelineBody")
     };
 
+    function renderAccessDenied() {
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:grid;place-items:center;background:
+          radial-gradient(circle at 18% 20%, rgba(251,146,60,.25), transparent 34%),
+          radial-gradient(circle at 82% 80%, rgba(59,130,246,.24), transparent 36%),
+          linear-gradient(160deg,#0b1020,#182138 48%,#0f172a);color:#f8fafc;font-family:'Segoe UI',sans-serif;">
+          <h1 style="margin:0 16px;font-size:clamp(32px,6vw,72px);font-weight:800;letter-spacing:.02em;text-transform:uppercase;text-shadow:0 10px 30px rgba(15,23,42,.55);">
+            Доступ запрещен
+          </h1>
+        </div>
+      `;
+    }
+
     function initTelegramContext() {
       const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-      if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-        setStatus("Open this page from Telegram", true);
+      if (!tg || !tg.initData || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+        renderAccessDenied();
         return;
       }
       const user = tg.initDataUnsafe.user;
@@ -420,7 +433,9 @@
     }
 
     initTelegramContext();
-    els.refreshBtn.addEventListener("click", refresh);
+    if (document.getElementById("refreshBtn")) {
+      els.refreshBtn.addEventListener("click", refresh);
+    }
   </script>
 </body>
 </html>

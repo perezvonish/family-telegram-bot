@@ -89,17 +89,7 @@ func (s *Server) makeWebHandler() http.Handler {
 		log.Printf("failed to init embedded web filesystem: %v", err)
 		return http.NotFoundHandler()
 	}
-	fileServer := http.FileServer(http.FS(sub))
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
-			if !hasTelegramIdentity(r) {
-				serveAccessDeniedPage(w)
-				return
-			}
-		}
-		fileServer.ServeHTTP(w, r)
-	})
+	return http.FileServer(http.FS(sub))
 }
 
 func (s *Server) withTelegramAuth(next http.Handler) http.Handler {
@@ -389,35 +379,6 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		log.Printf("failed to write JSON response: %v", err)
 	}
-}
-
-func hasTelegramIdentity(r *http.Request) bool {
-	if strings.TrimSpace(r.Header.Get("X-Telegram-Init-Data")) != "" {
-		return true
-	}
-
-	q := r.URL.Query()
-	// Telegram WebApp query params (non-user-specific service params).
-	if strings.TrimSpace(q.Get("tgWebAppData")) != "" ||
-		strings.TrimSpace(q.Get("tgWebAppPlatform")) != "" ||
-		strings.TrimSpace(q.Get("tgWebAppVersion")) != "" ||
-		strings.TrimSpace(q.Get("tgWebAppThemeParams")) != "" ||
-		strings.TrimSpace(q.Get("tgWebAppStartParam")) != "" {
-		return true
-	}
-
-	// Telegram WebView signals.
-	ua := strings.ToLower(strings.TrimSpace(r.UserAgent()))
-	if strings.Contains(ua, "telegram") {
-		return true
-	}
-
-	referer := strings.ToLower(strings.TrimSpace(r.Referer()))
-	if strings.Contains(referer, "t.me") || strings.Contains(referer, "telegram") {
-		return true
-	}
-
-	return false
 }
 
 type telegramInitUser struct {
