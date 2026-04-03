@@ -1,11 +1,9 @@
 package repository
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"time"
-
-	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DailyReportModel struct {
@@ -39,9 +37,8 @@ type DailyReportModel struct {
 }
 
 func toDailyReportEntity(m *DailyReportModel) *daily_report.DailyReport {
-	userID, _ := uuid.Parse(m.UserID)
 	return &daily_report.DailyReport{
-		UserID:        userID,
+		UserID:        m.UserID,
 		CreatedAt:     m.CreatedAt,
 		ReportDate:    m.ReportDate,
 		SleepTime:     m.SleepTime,
@@ -70,7 +67,7 @@ func toDailyReportEntity(m *DailyReportModel) *daily_report.DailyReport {
 
 func ToDailyReportModel(entity *daily_report.DailyReport) *DailyReportModel {
 	return &DailyReportModel{
-		UserID:        entity.UserID.String(),
+		UserID:        entity.UserID,
 		CreatedAt:     entity.CreatedAt,
 		ReportDate:    entity.ReportDate,
 		SleepTime:     entity.SleepTime,

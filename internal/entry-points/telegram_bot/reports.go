@@ -11,60 +11,56 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// â”€â”€â”€ /help â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 func (c *ChatBot) handleHelpCommand(chatID int64, _ string) {
-	text := `ðŸ“‹ Ð”Ð¾ÑÑ‚ÑƒÐ¿Ð½Ñ‹Ðµ ÐºÐ¾Ð¼Ð°Ð½Ð´Ñ‹:
+	text := `📋 Доступные команды:
 
-/diary â€” Ð·Ð°Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÑŒ Ð´Ð½ÐµÐ²Ð½Ð¸Ðº Ð·Ð´Ð¾Ñ€Ð¾Ð²ÑŒÑ
-/today â€” Ð¸Ñ‚Ð¾Ð³ ÑÐµÐ³Ð¾Ð´Ð½ÑÑˆÐ½ÐµÐ³Ð¾ Ð´Ð½Ñ Ñ Ð˜ÐžÐ¡ Ð¸ ÑÑ€Ð°Ð²Ð½ÐµÐ½Ð¸ÐµÐ¼ Ñ Ð½Ð¾Ñ€Ð¼Ð¾Ð¹
-/week â€” ÑÐ¿Ð°Ñ€ÐºÐ»Ð°Ð¹Ð½Ñ‹ Ð¸ Ñ€ÐµÐ¶Ð¸Ð¼Ð½Ñ‹Ð¹ score Ð·Ð° Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ðµ 7 Ð´Ð½ÐµÐ¹
-/stats â€” ÑÑ€ÐµÐ´Ð½Ð¸Ðµ Ð¿Ð¾ÐºÐ°Ð·Ð°Ñ‚ÐµÐ»Ð¸, ÐºÐ¾Ñ€Ñ€ÐµÐ»ÑÑ†Ð¸Ð¸, Ð»ÑƒÑ‡ÑˆÐ¸Ðµ Ð¸ Ñ‚ÑÐ¶Ñ‘Ð»Ñ‹Ðµ Ð´Ð½Ð¸ Ð·Ð° 30 Ð´Ð½ÐµÐ¹
-/stats 90 â€” Ñ‚Ð¾ Ð¶Ðµ Ð·Ð° 90 Ð´Ð½ÐµÐ¹
-/migraine â€” ÑÑ‚Ð°Ñ‚Ð¸ÑÑ‚Ð¸ÐºÐ° Ð¼Ð¸Ð³Ñ€ÐµÐ½ÐµÐ¹ Ð¸ Ñ‚Ð¾Ð¿ Ñ‚Ñ€Ð¸Ð³Ð³ÐµÑ€Ð¾Ð² Ð·Ð° 60 Ð´Ð½ÐµÐ¹
-/pills â€” Ñ‚Ñ€ÐµÐºÐµÑ€ Ñ‚Ð°Ð±Ð»ÐµÑ‚Ð¾Ðº: Ð¾ÑÑ‚Ð°Ñ‚Ð¾Ðº, Ð¿Ð¾Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ðµ, ÑƒÐ²ÐµÐ´Ð¾Ð¼Ð»ÐµÐ½Ð¸Ñ Ð¾Ð± Ð¾ÐºÐ¾Ð½Ñ‡Ð°Ð½Ð¸Ð¸
-/help â€” ÑÑ‚Ð¾ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ`
+/diary — заполнить дневник здоровья
+/today — итог сегодняшнего дня с ИОС и сравнением с нормой
+/week — спарклайны и режимный score за последние 7 дней
+/stats — средние показатели, корреляции, лучшие и тяжёлые дни за 30 дней
+/stats 90 — то же за 90 дней
+/migraine — статистика мигреней и топ триггеров за 60 дней
+/pills — трекер таблеток: остаток, пополнение, уведомления об окончании
+/help — это сообщение`
 	msg := tgbotapi.NewMessage(chatID, text)
 
 	c.telegramBotApi.Send(msg) //nolint:errcheck
 }
 
-// â”€â”€â”€ /today â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 func (c *ChatBot) handleTodayCommand(chatID int64, telegramUserID int64) {
 	u, err := c.userRepo.FindByTelegramID(c.ctx, telegramUserID)
 	if err != nil {
-		c.sendMessage(chatID, "ÐÐµ Ð¼Ð¾Ð³Ñƒ Ð½Ð°Ð¹Ñ‚Ð¸ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ")
+		c.sendMessage(chatID, "Не могу найти пользователя")
 		return
 	}
 
 	today := time.Now().UTC().Truncate(24 * time.Hour)
-	report, err := c.dailyReportRepo.FindByDate(c.ctx, u.ID, today)
+	report, err := c.dailyReportRepo.FindByDate(c.ctx, u.PrimaryStorageID(), today)
 	if err != nil {
-		c.sendMessage(chatID, "Ð¡ÐµÐ³Ð¾Ð´Ð½Ñ Ð´Ð½ÐµÐ²Ð½Ð¸Ðº ÐµÑ‰Ñ‘ Ð½Ðµ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½. Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐ¹ /diary")
+		c.sendMessage(chatID, "Сегодня дневник ещё не заполнен. Используй /diary")
 		return
 	}
 
-	past, _ := c.dailyReportRepo.FindLatest(c.ctx, u.ID, 30)
+	past, _ := c.dailyReportRepo.FindLatest(c.ctx, u.PrimaryStorageID(), 30)
 	norm := analytics.PersonalNorm(past)
 	ios := analytics.WellnessIndex(report)
 
-	text := fmt.Sprintf(`ðŸ“Š Ð˜Ñ‚Ð¾Ð³ Ð´Ð½Ñ â€” %s
+	text := fmt.Sprintf(`📊 Итог дня — %s
 
-Ð˜ÐžÐ¡: %.1f %s
+ИОС: %.1f %s
 
-ðŸ˜Œ ÐÐ°ÑÑ‚Ñ€Ð¾ÐµÐ½Ð¸Ðµ:   %d/10  %s
-ðŸ˜° Ð¢Ñ€ÐµÐ²Ð¾Ð³Ð°:      %d/5   %s
-âš¡ Ð­Ð½ÐµÑ€Ð³Ð¸Ñ:      %d/5   %s
-ðŸ˜´ Ð¡Ð¾Ð½:          %d/5   %s
-ðŸŒ¹ Ð›Ð¸Ð±Ð¸Ð´Ð¾:       %d/5   %s
+😌 Настроение:   %d/10  %s
+😰 Тревога:      %d/5   %s
+⚡ Энергия:      %d/5   %s
+😴 Сон:          %d/5   %s
+🌹 Либидо:       %d/5   %s
 
-ðŸ”„ Ð¡Ñ‚Ð°Ð±Ð¸Ð»ÑŒÐ½Ð¾ÑÑ‚ÑŒ: %s
+🔄 Стабильность: %s
 
 %s
 
-ðŸ¤ ÐžÑ‚Ð½Ð¾ÑˆÐµÐ½Ð¸Ñ: %d/5 Â· Ð‘Ð»Ð¸Ð·Ð¾ÑÑ‚ÑŒ: %d/5
-ðŸ§  ÐœÐ¸Ð³Ñ€ÐµÐ½ÑŒ: %s`,
+🤝 Отношения: %d/5 · Близость: %d/5
+🧠 Мигрень: %s`,
 		report.ReportDate.Format("2 January"),
 		ios, analytics.WellnessEmoji(ios),
 		report.Mood, analytics.DeltaLabel(float64(report.Mood), norm.Mood),
@@ -79,18 +75,16 @@ func (c *ChatBot) handleTodayCommand(chatID int64, telegramUserID int64) {
 	)
 
 	if report.DayComment != "" {
-		text += fmt.Sprintf("\n\nðŸ’¬ \"%s\"", report.DayComment)
+		text += fmt.Sprintf("\n\n💬 \"%s\"", report.DayComment)
 	}
 
 	c.sendMessage(chatID, text)
 }
 
-// â”€â”€â”€ /week â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 func (c *ChatBot) handleWeekCommand(chatID int64, telegramUserID int64) {
 	u, err := c.userRepo.FindByTelegramID(c.ctx, telegramUserID)
 	if err != nil {
-		c.sendMessage(chatID, "ÐÐµ Ð¼Ð¾Ð³Ñƒ Ð½Ð°Ð¹Ñ‚Ð¸ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ")
+		c.sendMessage(chatID, "Не могу найти пользователя")
 		return
 	}
 
@@ -99,34 +93,33 @@ func (c *ChatBot) handleWeekCommand(chatID int64, telegramUserID int64) {
 	to := time.Now().UTC().Truncate(24 * time.Hour)
 	from := to.AddDate(0, 0, -6)
 
-	reports, _ := c.dailyReportRepo.FindByPeriod(c.ctx, u.ID, from, to)
+	reports, _ := c.dailyReportRepo.FindByPeriod(c.ctx, u.PrimaryStorageID(), from, to)
 	if len(reports) == 0 {
-		c.sendMessage(chatID, "Ð”Ð°Ð½Ð½Ñ‹Ñ… Ð·Ð° Ð½ÐµÐ´ÐµÐ»ÑŽ Ð½ÐµÑ‚")
+		c.sendMessage(chatID, "Данных за неделю нет")
 		return
 	}
 
 	moods, anxieties, energies, sleeps := extractWeekSeries(reports)
 	regime := analytics.RegimeScore(reports)
 
-	// Ð›ÑƒÑ‡ÑˆÐ¸Ð¹ Ð¸ Ñ…ÑƒÐ´ÑˆÐ¸Ð¹ Ð´ÐµÐ½ÑŒ Ð¿Ð¾ Ð˜ÐžÐ¡
 	bestDay, worstDay := bestAndWorst(reports)
 
-	text := fmt.Sprintf(`ðŸ“ˆ ÐÐµÐ´ÐµÐ»Ñ %s â€” %s (%d Ð´Ð½ÐµÐ¹)
+	text := fmt.Sprintf(`📈 Неделя %s — %s (%d дней)
 
-ÐÐ°ÑÑ‚Ñ€Ð¾ÐµÐ½Ð¸Ðµ  %s  avg %.1f
-Ð¢Ñ€ÐµÐ²Ð¾Ð³Ð°     %s  avg %.1f
-Ð­Ð½ÐµÑ€Ð³Ð¸Ñ     %s  avg %.1f
-Ð¡Ð¾Ð½         %s  avg %.1f
+Настроение  %s  avg %.1f
+Тревога     %s  avg %.1f
+Энергия     %s  avg %.1f
+Сон         %s  avg %.1f
 
-ðŸ“‹ Ð ÐµÐ¶Ð¸Ð¼:
-  Ð¡Ð¾Ð½ Ð´Ð¾ 23:00:    %d/%d  %s
-  ÐŸÐ¾Ð´ÑŠÑ‘Ð¼ Ð´Ð¾ 10:00: %d/%d  %s
-  Ð’ÑÐµ Ð¿Ñ€Ð¸Ñ‘Ð¼Ñ‹ Ð¿Ð¸Ñ‰Ð¸: %d/%d  %s
-  Ð’ÑÐµ Ñ‚Ð°Ð±Ð»ÐµÑ‚ÐºÐ¸:    %d/%d  %s
-  Ð¤Ð¸Ð·Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾ÑÑ‚ÑŒ:   %d/%d  %s
+📋 Режим:
+  Сон до 23:00:    %d/%d  %s
+  Подъём до 10:00: %d/%d  %s
+  Все приёмы пищи: %d/%d  %s
+  Все таблетки:    %d/%d  %s
+  Физактивность:   %d/%d  %s
 
-ðŸ”¥ Ð›ÑƒÑ‡ÑˆÐ¸Ð¹ Ð´ÐµÐ½ÑŒ:  %s (Ð˜ÐžÐ¡ %.1f)
-ðŸ˜“ Ð¢ÑÐ¶Ñ‘Ð»Ñ‹Ð¹ Ð´ÐµÐ½ÑŒ: %s (Ð˜ÐžÐ¡ %.1f)`,
+🔥 Лучший день:  %s (ИОС %.1f)
+😓 Тяжёлый день: %s (ИОС %.1f)`,
 		from.Format("02.01"), to.Format("02.01"), len(reports),
 		analytics.Sparkline(moods, 10), avg(moods),
 		analytics.Sparkline(anxieties, 5), avg(anxieties),
@@ -144,30 +137,28 @@ func (c *ChatBot) handleWeekCommand(chatID int64, telegramUserID int64) {
 	c.sendMessage(chatID, text)
 }
 
-// â”€â”€â”€ /migraine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 func (c *ChatBot) handleMigraineCommand(chatID int64, telegramUserID int64) {
 	u, err := c.userRepo.FindByTelegramID(c.ctx, telegramUserID)
 	if err != nil {
-		c.sendMessage(chatID, "ÐÐµ Ð¼Ð¾Ð³Ñƒ Ð½Ð°Ð¹Ñ‚Ð¸ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ")
+		c.sendMessage(chatID, "Не могу найти пользователя")
 		return
 	}
 
 	to := time.Now().UTC().Truncate(24 * time.Hour)
 	from := to.AddDate(0, 0, -60)
 
-	reports, _ := c.dailyReportRepo.FindByPeriod(c.ctx, u.ID, from, to)
+	reports, _ := c.dailyReportRepo.FindByPeriod(c.ctx, u.PrimaryStorageID(), from, to)
 	report := analytics.AnalyzeMigraineTriggers(reports)
 
 	if report.TotalEpisodes == 0 {
-		c.sendMessage(chatID, "ðŸ§  Ð—Ð° Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ðµ 60 Ð´Ð½ÐµÐ¹ Ð¼Ð¸Ð³Ñ€ÐµÐ½ÐµÐ¹ (â‰¥2) Ð½Ðµ Ð·Ð°Ñ„Ð¸ÐºÑÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð¾")
+		c.sendMessage(chatID, "🧠 За последние 60 дней мигреней (≥2) не зафиксировано")
 		return
 	}
 
 	sideStr := formatSideStats(report.SideStats)
 
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "ðŸ§  ÐœÐ¸Ð³Ñ€ÐµÐ½Ð¸ Ð·Ð° 60 Ð´Ð½ÐµÐ¹: %d ÑÐ¿Ð¸Ð·Ð¾Ð´Ð¾Ð²\n\nÐ¡Ñ€ÐµÐ´Ð½Ð¸Ð¹ Ð±Ð°Ð»Ð»: %.1f\nÐ›Ð¾ÐºÐ°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ: %s\n\nÐ§Ð°ÑÑ‚Ñ‹Ðµ Ð¿Ñ€ÐµÐ´ÑˆÐµÑÑ‚Ð²ÐµÐ½Ð½Ð¸ÐºÐ¸ (Ð½Ð°ÐºÐ°Ð½ÑƒÐ½Ðµ):",
+	fmt.Fprintf(&sb, "🧠 Мигрени за 60 дней: %d эпизодов\n\nСредний балл: %.1f\nЛокализация: %s\n\nЧастые предшественники (накануне):",
 		report.TotalEpisodes, report.AvgScore, sideStr)
 
 	for _, t := range report.Triggers {
@@ -181,21 +172,19 @@ func (c *ChatBot) handleMigraineCommand(chatID int64, telegramUserID int64) {
 	c.sendMessage(chatID, sb.String())
 }
 
-// â”€â”€â”€ /stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 func (c *ChatBot) handleStatsCommand(chatID int64, telegramUserID int64, days int) {
 	u, err := c.userRepo.FindByTelegramID(c.ctx, telegramUserID)
 	if err != nil {
-		c.sendMessage(chatID, "ÐÐµ Ð¼Ð¾Ð³Ñƒ Ð½Ð°Ð¹Ñ‚Ð¸ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ")
+		c.sendMessage(chatID, "Не могу найти пользователя")
 		return
 	}
 
 	to := time.Now().UTC().Truncate(24 * time.Hour)
 	from := to.AddDate(0, 0, -days)
 
-	reports, _ := c.dailyReportRepo.FindByPeriod(c.ctx, u.ID, from, to)
+	reports, _ := c.dailyReportRepo.FindByPeriod(c.ctx, u.PrimaryStorageID(), from, to)
 	if len(reports) < 7 {
-		c.sendMessage(chatID, fmt.Sprintf("ÐœÐ°Ð»Ð¾Ð²Ð°Ñ‚Ð¾ Ð´Ð°Ð½Ð½Ñ‹Ñ… â€” %d Ð´Ð½ÐµÐ¹. ÐÑƒÐ¶Ð½Ð¾ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ 7.", len(reports)))
+		c.sendMessage(chatID, fmt.Sprintf("Маловато данных — %d дней. Нужно хотя бы 7.", len(reports)))
 		return
 	}
 
@@ -207,13 +196,11 @@ func (c *ChatBot) handleStatsCommand(chatID int64, telegramUserID int64, days in
 	c.sendMessage(chatID, text)
 }
 
-// â”€â”€â”€ formatters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 func formatExtras(extras []string) string {
 	if len(extras) == 0 {
-		return "â˜• Ð‘ÐµÐ· Ð¾ÑÐ¾Ð±ÐµÐ½Ð½Ð¾ÑÑ‚ÐµÐ¹"
+		return "☕ Без особенностей"
 	}
-	return "â˜• " + strings.Join(extras, ", ")
+	return "☕ " + strings.Join(extras, ", ")
 }
 
 func formatMigraine(r *daily_report.DailyReport) string {
@@ -233,17 +220,17 @@ func formatMigraine(r *daily_report.DailyReport) string {
 func formatSideStats(stats map[string]int) string {
 	parts := []string{}
 	labels := map[string]string{
-		"bilateral": "Ð´Ð²ÑƒÑÑ‚Ð¾Ñ€Ð¾Ð½Ð½ÑÑ",
-		"left":      "ÑÐ»ÐµÐ²Ð°",
-		"right":     "ÑÐ¿Ñ€Ð°Ð²Ð°",
+		"bilateral": "двусторонняя",
+		"left":      "слева",
+		"right":     "справа",
 	}
 	for key, label := range labels {
 		if n, ok := stats[key]; ok && n > 0 {
-			parts = append(parts, fmt.Sprintf("%s %dÃ—", label, n))
+			parts = append(parts, fmt.Sprintf("%s %d×", label, n))
 		}
 	}
 	if len(parts) == 0 {
-		return "Ð½Ðµ ÑƒÐºÐ°Ð·Ð°Ð½Ð°"
+		return "не указана"
 	}
 	return strings.Join(parts, ", ")
 }
@@ -257,37 +244,37 @@ func formatStatsReport(
 ) string {
 	var sb strings.Builder
 
-	fmt.Fprintf(&sb, "ðŸ“Š Ð¡Ñ‚Ð°Ñ‚Ð¸ÑÑ‚Ð¸ÐºÐ° Ð·Ð° %d Ð´Ð½ÐµÐ¹ (%d Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¾)\n\n", days, len(reports))
-	fmt.Fprintf(&sb, "Ð¡Ñ€ÐµÐ´Ð½Ð¸Ðµ Ð¿Ð¾ÐºÐ°Ð·Ð°Ñ‚ÐµÐ»Ð¸:\n")
-	fmt.Fprintf(&sb, "  ÐÐ°ÑÑ‚Ñ€Ð¾ÐµÐ½Ð¸Ðµ:   %.1f   Ð¢Ñ€ÐµÐ²Ð¾Ð³Ð°:   %.1f\n", norm.Mood, norm.Anxiety)
-	fmt.Fprintf(&sb, "  Ð­Ð½ÐµÑ€Ð³Ð¸Ñ:      %.1f   Ð¡Ð¾Ð½:       %.1f\n", norm.Energy, norm.SleepQuality)
-	fmt.Fprintf(&sb, "  Ð›Ð¸Ð±Ð¸Ð´Ð¾:       %.1f   ÐœÐ¸Ð³Ñ€ÐµÐ½ÑŒ:   %.1f\n", norm.Libido, norm.Migraine)
-	fmt.Fprintf(&sb, "  Ð˜ÐžÐ¡:          %.1f %s\n", norm.WellnessIndex, analytics.WellnessEmoji(norm.WellnessIndex))
+	fmt.Fprintf(&sb, "📊 Статистика за %d дней (%d заполнено)\n\n", days, len(reports))
+	fmt.Fprintf(&sb, "Средние показатели:\n")
+	fmt.Fprintf(&sb, "  Настроение:   %.1f   Тревога:   %.1f\n", norm.Mood, norm.Anxiety)
+	fmt.Fprintf(&sb, "  Энергия:      %.1f   Сон:       %.1f\n", norm.Energy, norm.SleepQuality)
+	fmt.Fprintf(&sb, "  Либидо:       %.1f   Мигрень:   %.1f\n", norm.Libido, norm.Migraine)
+	fmt.Fprintf(&sb, "  ИОС:          %.1f %s\n", norm.WellnessIndex, analytics.WellnessEmoji(norm.WellnessIndex))
 
 	if len(corrs) > 0 {
-		fmt.Fprintf(&sb, "\nðŸ”— Ð¡Ð¸Ð»ÑŒÐ½Ñ‹Ðµ ÑÐ²ÑÐ·Ð¸:\n")
+		fmt.Fprintf(&sb, "\n🔗 Сильные связи:\n")
 		for _, cr := range corrs {
-			arrow := "ðŸ“ˆ"
+			arrow := "📈"
 			if cr.R < 0 {
-				arrow = "ðŸ“‰"
+				arrow = "📉"
 			}
-			fmt.Fprintf(&sb, "  %s %s â†’ %s  r=%+.2f (%s)\n", arrow, cr.LabelA, cr.LabelB, cr.R, cr.Strength)
+			fmt.Fprintf(&sb, "  %s %s → %s  r=%+.2f (%s)\n", arrow, cr.LabelA, cr.LabelB, cr.R, cr.Strength)
 		}
 	}
 
-	// Ð›ÑƒÑ‡ÑˆÐ¸Ð¹ Ð¸ Ñ…ÑƒÐ´ÑˆÐ¸Ð¹ Ð´ÐµÐ½ÑŒ Ð½ÐµÐ´ÐµÐ»Ð¸ Ð¿Ð¾ Ð˜ÐžÐ¡ (ÑÑ€ÐµÐ´Ð½Ð¸Ð¹ Mood ÐºÐ°Ðº Ð¿Ñ€Ð¾ÐºÑÐ¸)
+	// Лучший и худший день недели по ИОС (средний Mood как прокси)
 	bestWD, worstWD := bestAndWorstWeekday(weekday)
 	if bestWD.Count > 0 {
-		fmt.Fprintf(&sb, "\nðŸ“… Ð›ÑƒÑ‡ÑˆÐ¸Ð¹ Ð´ÐµÐ½ÑŒ Ð½ÐµÐ´ÐµÐ»Ð¸: %s (%.1f)\n", ruWeekday(bestWD.Day), bestWD.AvgMood)
+		fmt.Fprintf(&sb, "\n📅 Лучший день недели: %s (%.1f)\n", ruWeekday(bestWD.Day), bestWD.AvgMood)
 	}
 	if worstWD.Count > 0 {
-		fmt.Fprintf(&sb, "ðŸ“… Ð¢ÑÐ¶Ñ‘Ð»Ñ‹Ð¹ Ð´ÐµÐ½ÑŒ Ð½ÐµÐ´ÐµÐ»Ð¸: %s (%.1f)\n", ruWeekday(worstWD.Day), worstWD.AvgMood)
+		fmt.Fprintf(&sb, "📅 Тяжёлый день недели: %s (%.1f)\n", ruWeekday(worstWD.Day), worstWD.AvgMood)
 	}
 
-	// Ð¢Ð¾Ð¿-3 Ð»ÑƒÑ‡ÑˆÐ¸Ñ… Ð¸ Ñ‚ÑÐ¶Ñ‘Ð»Ñ‹Ñ… Ð´Ð½ÐµÐ¹ Ð¿Ð¾ Ð˜ÐžÐ¡
+	// Топ-3 лучших и тяжёлых дней по ИОС
 	best3, worst3 := topDays(reports, 3)
 	if len(best3) > 0 {
-		fmt.Fprintf(&sb, "\nðŸ”¥ Ð¢Ð¾Ð¿ Ð»ÑƒÑ‡ÑˆÐ¸Ñ… Ð´Ð½ÐµÐ¹:  ")
+		fmt.Fprintf(&sb, "\n🔥 Топ лучших дней:  ")
 		for i, r := range best3 {
 			if i > 0 {
 				fmt.Fprintf(&sb, ", ")
@@ -297,7 +284,7 @@ func formatStatsReport(
 		fmt.Fprintf(&sb, "\n")
 	}
 	if len(worst3) > 0 {
-		fmt.Fprintf(&sb, "ðŸ˜“ Ð¢Ð¾Ð¿ Ñ‚ÑÐ¶Ñ‘Ð»Ñ‹Ñ… Ð´Ð½ÐµÐ¹: ")
+		fmt.Fprintf(&sb, "😓 Топ тяжёлых дней: ")
 		for i, r := range worst3 {
 			if i > 0 {
 				fmt.Fprintf(&sb, ", ")
@@ -308,8 +295,6 @@ func formatStatsReport(
 
 	return sb.String()
 }
-
-// â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 func extractWeekSeries(reports []*daily_report.DailyReport) (moods, anxieties, energies, sleeps []float64) {
 	for _, r := range reports {
@@ -339,11 +324,11 @@ func progressBar(count, total int) string {
 	pct := count * 100 / total
 	switch {
 	case pct == 100:
-		return "âœ…"
+		return "✅"
 	case pct >= 70:
-		return "ðŸŸ¡"
+		return "🟡"
 	default:
-		return "ðŸ”´"
+		return "🔴"
 	}
 }
 
@@ -373,7 +358,7 @@ func topDays(reports []*daily_report.DailyReport, n int) (best, worst []*daily_r
 		all[i] = scored{r, analytics.WellnessIndex(r)}
 	}
 
-	// Ð¿Ñ€Ð¾ÑÑ‚Ð°Ñ ÑÐ¾Ñ€Ñ‚Ð¸Ñ€Ð¾Ð²ÐºÐ° Ð¿ÑƒÐ·Ñ‹Ñ€ÑŒÐºÐ¾Ð¼ Ð´Ð»Ñ Ð½ÐµÐ±Ð¾Ð»ÑŒÑˆÐ¸Ñ… N
+	// простая сортировка пузырьком для небольших N
 	for i := 0; i < len(all)-1; i++ {
 		for j := i + 1; j < len(all); j++ {
 			if all[j].score > all[i].score {
@@ -410,15 +395,15 @@ func bestAndWorstWeekday(stats [7]analytics.WeekdayStats) (best, worst analytics
 func triggerIcon(pct float64) string {
 	switch {
 	case pct >= 60:
-		return "ðŸ”´"
+		return "🔴"
 	case pct >= 30:
-		return "ðŸŸ "
+		return "🟠"
 	default:
-		return "ðŸŸ¡"
+		return "🟡"
 	}
 }
 
 func ruWeekday(wd time.Weekday) string {
-	names := [7]string{"Ð²Ñ", "Ð¿Ð½", "Ð²Ñ‚", "ÑÑ€", "Ñ‡Ñ‚", "Ð¿Ñ‚", "ÑÐ±"}
+	names := [7]string{"вс", "пн", "вт", "ср", "чт", "пт", "сб"}
 	return names[wd]
 }

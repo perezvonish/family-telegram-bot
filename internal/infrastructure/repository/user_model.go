@@ -43,6 +43,7 @@ type UserModel struct {
 func (m *UserModel) ToEntity() *user.User {
 	return &user.User{
 		ID:         objectIDToUUID(m.ID),
+		MongoID:    m.ID.Hex(),
 		TelegramID: int64(m.TelegramID),
 		FirstName:  m.FirstName,
 		Username:   m.Username,

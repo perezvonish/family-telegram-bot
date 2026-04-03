@@ -282,7 +282,7 @@ func (m *Module) finishSurvey(ctx bot.BotContext, session *bot.Session) error {
 		return err
 	}
 
-	report := daily_report.NewDailyReport(u.ID)
+	report := daily_report.NewDailyReport(u.PrimaryStorageID())
 	report.SleepTime = session.GetString(keySleepTime)
 	report.WakeTime = session.GetString(keyWakeTime)
 	report.WorkedToday = session.GetString(keyWorkedToday)

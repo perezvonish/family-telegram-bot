@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"perezvonish/health-tracker/internal/infrastructure/database"
 
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -36,9 +36,12 @@ func (r *DailyReportRepository) Create(ctx context.Context, report *daily_report
 	return nil
 }
 
-func (r *DailyReportRepository) FindByPeriod(ctx context.Context, userID uuid.UUID, from, to time.Time) ([]*daily_report.DailyReport, error) {
+func (r *DailyReportRepository) FindByPeriod(ctx context.Context, userID string, from, to time.Time) ([]*daily_report.DailyReport, error) {
+	if userID == "" {
+		return nil, errors.New("userID is empty")
+	}
 	filter := bson.M{
-		"user_id":     userID.String(),
+		"user_id":     userID,
 		"report_date": bson.M{"$gte": from, "$lte": to},
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "report_date", Value: 1}})
@@ -60,8 +63,11 @@ func (r *DailyReportRepository) FindByPeriod(ctx context.Context, userID uuid.UU
 	return result, nil
 }
 
-func (r *DailyReportRepository) FindLatest(ctx context.Context, userID uuid.UUID, limit int) ([]*daily_report.DailyReport, error) {
-	filter := bson.M{"user_id": userID.String()}
+func (r *DailyReportRepository) FindLatest(ctx context.Context, userID string, limit int) ([]*daily_report.DailyReport, error) {
+	if userID == "" {
+		return nil, errors.New("userID is empty")
+	}
+	filter := bson.M{"user_id": userID}
 	opts := options.Find().
 		SetSort(bson.D{{Key: "report_date", Value: -1}}).
 		SetLimit(int64(limit))
@@ -83,12 +89,15 @@ func (r *DailyReportRepository) FindLatest(ctx context.Context, userID uuid.UUID
 	return result, nil
 }
 
-func (r *DailyReportRepository) FindByDate(ctx context.Context, userID uuid.UUID, date time.Time) (*daily_report.DailyReport, error) {
+func (r *DailyReportRepository) FindByDate(ctx context.Context, userID string, date time.Time) (*daily_report.DailyReport, error) {
+	if userID == "" {
+		return nil, errors.New("userID is empty")
+	}
 	dayStart := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 	dayEnd := dayStart.Add(24 * time.Hour)
 
 	filter := bson.M{
-		"user_id":     userID.String(),
+		"user_id":     userID,
 		"report_date": bson.M{"$gte": dayStart, "$lt": dayEnd},
 	}
 

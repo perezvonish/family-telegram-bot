@@ -22,8 +22,6 @@ import (
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"perezvonish/health-tracker/internal/domain/user"
 	"perezvonish/health-tracker/internal/shared/config"
-
-	"github.com/google/uuid"
 )
 
 //go:embed web/*
@@ -127,7 +125,7 @@ func (s *Server) handleReports(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reports, err := s.reportsByDays(u.ID, days)
+	reports, err := s.reportsByDays(u.PrimaryStorageID(), days)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to load reports")
 		return
@@ -169,7 +167,7 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reports, err := s.reportsByDays(u.ID, days)
+	reports, err := s.reportsByDays(u.PrimaryStorageID(), days)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to load reports")
 		return
@@ -206,7 +204,7 @@ func (s *Server) handleCorrelations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reports, err := s.reportsByDays(u.ID, days)
+	reports, err := s.reportsByDays(u.PrimaryStorageID(), days)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to load reports")
 		return
@@ -235,7 +233,7 @@ func (s *Server) handleMigraine(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reports, err := s.reportsByDays(u.ID, days)
+	reports, err := s.reportsByDays(u.PrimaryStorageID(), days)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to load reports")
 		return
@@ -282,7 +280,7 @@ func (s *Server) handleWeekday(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reports, err := s.reportsByDays(u.ID, days)
+	reports, err := s.reportsByDays(u.PrimaryStorageID(), days)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to load reports")
 		return
@@ -318,7 +316,7 @@ func (s *Server) resolveUser(r *http.Request) (*user.User, int, error) {
 	return u, http.StatusOK, nil
 }
 
-func (s *Server) reportsByDays(userID uuid.UUID, days int) ([]*daily_report.DailyReport, error) {
+func (s *Server) reportsByDays(userID string, days int) ([]*daily_report.DailyReport, error) {
 	to := time.Now().UTC().Truncate(24 * time.Hour)
 	from := to.AddDate(0, 0, -days)
 	return s.dailyReportRepo.FindByPeriod(s.ctx, userID, from, to)

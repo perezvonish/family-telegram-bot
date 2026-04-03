@@ -47,7 +47,7 @@ func (c *ChatBot) runDailyAlerts() {
 	}
 	for _, u := range users {
 		// FindLatest возвращает записи в порядке убывания даты (новые первые)
-		last7, err := c.dailyReportRepo.FindLatest(c.ctx, u.ID, 7)
+		last7, err := c.dailyReportRepo.FindLatest(c.ctx, u.PrimaryStorageID(), 7)
 		if err != nil || len(last7) < 2 {
 			continue
 		}
@@ -111,7 +111,7 @@ func (c *ChatBot) checkWeeklySundayInsight(u *user.User) {
 	if time.Now().Weekday() != time.Sunday {
 		return
 	}
-	last30, err := c.dailyReportRepo.FindLatest(c.ctx, u.ID, 30)
+	last30, err := c.dailyReportRepo.FindLatest(c.ctx, u.PrimaryStorageID(), 30)
 	if err != nil || len(last30) < 7 {
 		return
 	}

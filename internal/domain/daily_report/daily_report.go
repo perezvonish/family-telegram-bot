@@ -2,12 +2,10 @@ package daily_report
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type DailyReport struct {
-	UserID     uuid.UUID `json:"userId"`
+	UserID     string    `json:"userId"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ReportDate time.Time `json:"reportDate"`
 
@@ -35,7 +33,7 @@ type DailyReport struct {
 	DayComment    string   `json:"dayComment,omitempty"`
 }
 
-func NewDailyReport(userID uuid.UUID) *DailyReport {
+func NewDailyReport(userID string) *DailyReport {
 	now := time.Now().UTC()
 	reportDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
