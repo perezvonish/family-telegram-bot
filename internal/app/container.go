@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"log"
+	"perezvonish/health-tracker/internal/bot"
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"perezvonish/health-tracker/internal/domain/pill_tracker"
 	"perezvonish/health-tracker/internal/domain/user"
@@ -22,6 +23,9 @@ type Container struct {
 	DailyReportRepo daily_report.Repository
 	PillTrackerRepo pill_tracker.Repository
 
+	FeatureFlags bot.FeatureFlagStore
+	Router       *bot.Router
+
 	TelegramBot telegram_bot.Bot
 }
 
@@ -32,9 +36,22 @@ func NewContainer(ctx context.Context, cfg *config.Config, mongoDB *database.Mon
 	}
 
 	c.initRepositories()
+	c.initFeatureFlags()
+	c.initRouter()
 	c.initTelegramBot(ctx)
 
 	return c
+}
+
+func (c *Container) initFeatureFlags() {
+	c.FeatureFlags = bot.NewEnvFeatureFlags()
+	log.Println("Feature flags initialized (env)")
+}
+
+func (c *Container) initRouter() {
+	sessions := bot.NewSessionStore()
+	c.Router = bot.NewRouter(sessions, c.FeatureFlags)
+	log.Println("Bot router initialized")
 }
 
 func (c *Container) initRepositories() {

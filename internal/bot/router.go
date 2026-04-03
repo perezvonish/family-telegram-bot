@@ -16,12 +16,14 @@ type Router struct {
 	commandIndex map[string]Module
 	prefixIndex  []prefixEntry
 	sessions     *SessionStore
+	flags        FeatureFlagStore
 }
 
-func NewRouter(sessions *SessionStore) *Router {
+func NewRouter(sessions *SessionStore, flags FeatureFlagStore) *Router {
 	return &Router{
 		commandIndex: make(map[string]Module),
 		sessions:     sessions,
+		flags:        flags,
 	}
 }
 
@@ -43,7 +45,7 @@ func (r *Router) HandleMessage(ctx BotContext, text string) {
 	// 1. Есть активная сессия — передаём шаг в модуль
 	if session := r.sessions.Get(ctx.ChatID); session != nil {
 		m, ok := r.commandIndex[session.Module]
-		if ok {
+		if ok && r.flags.IsEnabled(m.Name(), ctx.UserID) {
 			if err := m.HandleTextStep(ctx, session, text); err != nil {
 				log.Printf("[router] HandleTextStep error (module=%s): %v", session.Module, err)
 			}
@@ -56,6 +58,10 @@ func (r *Router) HandleMessage(ctx BotContext, text string) {
 		m, ok := r.commandIndex[cmd]
 		if !ok {
 			ctx.Send("Неизвестная команда. Используй /help")
+			return
+		}
+		if !r.flags.IsEnabled(m.Name(), ctx.UserID) {
+			ctx.Send("Эта функция недоступна.")
 			return
 		}
 		if err := m.HandleCommand(ctx, cmd, args); err != nil {
@@ -71,8 +77,10 @@ func (r *Router) HandleMessage(ctx BotContext, text string) {
 func (r *Router) HandleCallback(ctx BotContext, msgID int, data string) {
 	for _, entry := range r.prefixIndex {
 		if strings.HasPrefix(data, entry.prefix) {
-			if err := entry.module.HandleCallback(ctx, msgID, data); err != nil {
-				log.Printf("[router] HandleCallback error (module=%s, data=%s): %v", entry.module.Name(), data, err)
+			if r.flags.IsEnabled(entry.module.Name(), ctx.UserID) {
+				if err := entry.module.HandleCallback(ctx, msgID, data); err != nil {
+					log.Printf("[router] HandleCallback error (module=%s, data=%s): %v", entry.module.Name(), data, err)
+				}
 			}
 			return
 		}
