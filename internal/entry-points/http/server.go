@@ -392,6 +392,8 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 }
 
 func hasTelegramIdentity(r *http.Request) bool {
+	fmt.Println(r.UserAgent())
+
 	// Telegram WebView signals.
 	ua := strings.ToLower(strings.TrimSpace(r.UserAgent()))
 	if strings.Contains(ua, "telegram") {
