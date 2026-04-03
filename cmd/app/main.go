@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"perezvonish/health-tracker/internal/app"
@@ -28,7 +30,13 @@ func main() {
 	}
 
 	container := app.NewContainer(ctx, cfg, mongoDB)
-	container.TelegramBot.Start()
+	go container.TelegramBot.Start()
+	go func() {
+		if err := container.HTTPServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("HTTP server failed: %v", err)
+			stop()
+		}
+	}()
 
 	<-ctx.Done()
 	gracefulShutdown(container)

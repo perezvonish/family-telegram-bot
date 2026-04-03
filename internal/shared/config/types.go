@@ -7,8 +7,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Host string `env:"SERVER_HOST" envDefault:"localhost"`
-	Port int64  `env:"SERVER_PORT" envDefault:"8080"`
+	Host        string `env:"SERVER_HOST" envDefault:"localhost"`
+	Port        int64  `env:"SERVER_PORT" envDefault:"8080"`
+	BearerToken string `env:"HTTP_BEARER_TOKEN" envDefault:""`
 }
 
 type MongoConfig struct {

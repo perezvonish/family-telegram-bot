@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
+	"errors"
 	"log"
 	"perezvonish/health-tracker/internal/bot"
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"perezvonish/health-tracker/internal/domain/pill_tracker"
 	"perezvonish/health-tracker/internal/domain/user"
+	httpentry "perezvonish/health-tracker/internal/entry-points/http"
 	"perezvonish/health-tracker/internal/entry-points/telegram_bot"
 	"perezvonish/health-tracker/internal/infrastructure/database"
 	"perezvonish/health-tracker/internal/infrastructure/repository"
@@ -30,6 +32,7 @@ type Container struct {
 	PillsModule  *pills.Module
 
 	TelegramBot telegram_bot.Bot
+	HTTPServer  *httpentry.Server
 }
 
 func NewContainer(ctx context.Context, cfg *config.Config, mongoDB *database.MongoDB) *Container {
@@ -42,6 +45,7 @@ func NewContainer(ctx context.Context, cfg *config.Config, mongoDB *database.Mon
 	c.initFeatureFlags()
 	c.initRouter()
 	c.initTelegramBot(ctx)
+	c.initHTTPServer(ctx)
 
 	return c
 }
@@ -86,6 +90,20 @@ func (c *Container) initTelegramBot(ctx context.Context) {
 	c.TelegramBot = telegram_bot.NewChatBot(ctx, botAPI, c.UserRepo, c.DailyReportRepo, c.Router, c.PillsModule)
 }
 
+func (c *Container) initHTTPServer(ctx context.Context) {
+	c.HTTPServer = httpentry.NewServer(ctx, c.Config.Server, c.UserRepo, c.DailyReportRepo)
+}
+
 func (c *Container) Close(ctx context.Context) error {
-	return c.MongoDB.Close(ctx)
+	var err error
+	if c.HTTPServer != nil {
+		err = errors.Join(err, c.HTTPServer.Shutdown(ctx))
+	}
+	if c.TelegramBot != nil {
+		c.TelegramBot.Stop()
+	}
+	if c.MongoDB != nil {
+		err = errors.Join(err, c.MongoDB.Close(ctx))
+	}
+	return err
 }

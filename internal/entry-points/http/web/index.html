@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Health Tracker Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-1: #0f2027;
+      --bg-2: #203a43;
+      --bg-3: #2c5364;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.18);
+      --text: #f4f7f8;
+      --muted: #c4d2d7;
+      --accent: #ffb347;
+      --accent-2: #6ee7b7;
+      --danger: #ff6b6b;
+      --ok: #8ddf84;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 10% 15%, rgba(255, 179, 71, 0.22), transparent 30%),
+                  radial-gradient(circle at 90% 5%, rgba(110, 231, 183, 0.22), transparent 35%),
+                  linear-gradient(140deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 56px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: 0.5px;
+    }
+
+    p.subtitle {
+      margin: 0 0 24px;
+      color: var(--muted);
+    }
+
+    .panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .panel input, .panel button {
+      width: 100%;
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 15px;
+    }
+
+    .panel button {
+      cursor: pointer;
+      font-weight: 600;
+      background: linear-gradient(90deg, rgba(255, 179, 71, 0.35), rgba(110, 231, 183, 0.35));
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      backdrop-filter: blur(4px);
+      min-height: 220px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      margin: 0 0 10px;
+      letter-spacing: 0.3px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status {
+      margin: 8px 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+      min-height: 18px;
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 16px 10px 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Health Tracker</h1>
+    <p class="subtitle">Daily signals, weekly shape, trigger map.</p>
+
+    <div class="panel">
+      <input id="token" placeholder="Bearer token">
+      <input id="telegramId" placeholder="telegram_id (optional)">
+      <input id="days" type="number" min="7" max="365" value="30" placeholder="days">
+      <button id="refreshBtn">Refresh Dashboard</button>
+    </div>
+    <div id="status" class="status"></div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Dashboard</h2>
+        <div class="stats-row">
+          <span class="pill" id="metricIOS">IOS: -</span>
+          <span class="pill" id="metricMood">Mood: -</span>
+          <span class="pill" id="metricAnxiety">Anxiety: -</span>
+          <span class="pill" id="metricEnergy">Energy: -</span>
+        </div>
+        <canvas id="iosLine"></canvas>
+      </section>
+
+      <section class="card">
+        <h2>Current Profile</h2>
+        <canvas id="radarChart"></canvas>
+      </section>
+
+      <section class="card">
+        <h2>Weekday Pattern</h2>
+        <canvas id="weekdayBar"></canvas>
+      </section>
+
+      <section class="card">
+        <h2>Migraine Triggers</h2>
+        <canvas id="migraineDoughnut"></canvas>
+      </section>
+
+      <section class="card">
+        <h2>Correlations (Top 10)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Pair</th>
+              <th>r</th>
+              <th>Strength</th>
+            </tr>
+          </thead>
+          <tbody id="corrBody"></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Timeline</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>IOS</th>
+              <th>Mood</th>
+              <th>Anxiety</th>
+              <th>Migraine</th>
+            </tr>
+          </thead>
+          <tbody id="timelineBody"></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const charts = {};
+
+    const els = {
+      token: document.getElementById("token"),
+      telegramId: document.getElementById("telegramId"),
+      days: document.getElementById("days"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      status: document.getElementById("status"),
+      metricIOS: document.getElementById("metricIOS"),
+      metricMood: document.getElementById("metricMood"),
+      metricAnxiety: document.getElementById("metricAnxiety"),
+      metricEnergy: document.getElementById("metricEnergy"),
+      corrBody: document.getElementById("corrBody"),
+      timelineBody: document.getElementById("timelineBody")
+    };
+
+    function setStatus(text, isError = false) {
+      els.status.textContent = text;
+      els.status.className = isError ? "status error" : "status";
+    }
+
+    function queryString() {
+      const params = new URLSearchParams();
+      const days = Number(els.days.value || "30");
+      params.set("days", String(days));
+      if (els.telegramId.value.trim()) {
+        params.set("telegram_id", els.telegramId.value.trim());
+      }
+      return params.toString();
+    }
+
+    async function api(path) {
+      const token = els.token.value.trim();
+      if (!token) {
+        throw new Error("Bearer token is required");
+      }
+      const response = await fetch(path, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+      return data;
+    }
+
+    function destroyChart(id) {
+      if (charts[id]) {
+        charts[id].destroy();
+      }
+    }
+
+    function renderIOLine(reports) {
+      destroyChart("iosLine");
+      const ctx = document.getElementById("iosLine");
+      charts.iosLine = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: reports.map(r => new Date(r.reportDate).toLocaleDateString()),
+          datasets: [{
+            label: "Wellness Index",
+            data: reports.map(r => Number(r.wellnessIndex.toFixed(2))),
+            borderColor: "#ffb347",
+            backgroundColor: "rgba(255, 179, 71, 0.2)",
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+    }
+
+    function renderRadar(last) {
+      destroyChart("radar");
+      const ctx = document.getElementById("radarChart");
+      charts.radar = new Chart(ctx, {
+        type: "radar",
+        data: {
+          labels: ["Mood", "Energy", "Sleep", "Libido", "Relations", "Closeness"],
+          datasets: [{
+            data: [last.mood, last.energy, last.sleepQuality, last.libido, last.relationship, last.closeness],
+            borderColor: "#6ee7b7",
+            backgroundColor: "rgba(110, 231, 183, 0.2)"
+          }]
+        },
+        options: { scales: { r: { beginAtZero: true, max: 10 } }, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function renderWeekday(weekday) {
+      destroyChart("weekday");
+      const ctx = document.getElementById("weekdayBar");
+      charts.weekday = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+          datasets: [{
+            label: "Avg mood",
+            data: weekday.map(w => Number(((w.AvgMood || 0)).toFixed(2))),
+            backgroundColor: "rgba(141, 223, 132, 0.5)",
+            borderColor: "#8ddf84"
+          }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+    }
+
+    function renderMigraine(triggers) {
+      destroyChart("migraine");
+      const ctx = document.getElementById("migraineDoughnut");
+      charts.migraine = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: triggers.map(t => t.Label),
+          datasets: [{
+            data: triggers.map(t => Number((t.Percent || 0).toFixed(2))),
+            backgroundColor: ["#ff6b6b", "#ffb347", "#ffe66d", "#4ecdc4", "#6ee7b7"]
+          }]
+        }
+      });
+    }
+
+    function renderCorrelations(corrs) {
+      els.corrBody.innerHTML = "";
+      const top = corrs.slice(0, 10);
+      for (const c of top) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${c.LabelA} -> ${c.LabelB}</td><td>${(c.R || 0).toFixed(2)}</td><td>${c.Strength}</td>`;
+        els.corrBody.appendChild(tr);
+      }
+    }
+
+    function renderTimeline(reports) {
+      els.timelineBody.innerHTML = "";
+      for (const r of reports.slice().reverse()) {
+        const tr = document.createElement("tr");
+        const ios = Number(r.wellnessIndex.toFixed(1));
+        tr.style.background = ios >= 8 ? "rgba(141,223,132,0.15)" : ios < 5 ? "rgba(255,107,107,0.14)" : "transparent";
+        tr.innerHTML = `
+          <td>${new Date(r.reportDate).toLocaleDateString()}</td>
+          <td>${ios}</td>
+          <td>${r.mood}</td>
+          <td>${r.anxiety}</td>
+          <td>${r.migraine}</td>
+        `;
+        els.timelineBody.appendChild(tr);
+      }
+    }
+
+    async function refresh() {
+      setStatus("Loading...");
+      try {
+        const qs = queryString();
+        const [reportsData, statsData, corrData, migraineData, weekdayData] = await Promise.all([
+          api(`/api/reports?${qs}`),
+          api(`/api/stats?${qs}`),
+          api(`/api/correlations?${qs}`),
+          api(`/api/migraine?${qs}`),
+          api(`/api/weekday?${qs}`)
+        ]);
+
+        const reports = reportsData.reports || [];
+        if (!reports.length) {
+          setStatus("No reports found for selected range", true);
+          return;
+        }
+
+        const last = reports[reports.length - 1];
+        els.metricIOS.textContent = `IOS: ${last.wellnessIndex.toFixed(1)}`;
+        els.metricMood.textContent = `Mood: ${last.mood}/10`;
+        els.metricAnxiety.textContent = `Anxiety: ${last.anxiety}/5`;
+        els.metricEnergy.textContent = `Energy: ${last.energy}/5`;
+
+        renderIOLine(reports);
+        renderRadar(last);
+        renderWeekday(weekdayData.weekday || []);
+        renderMigraine((migraineData.report && migraineData.report.Triggers) || []);
+        renderCorrelations(corrData.correlations || []);
+        renderTimeline(reports);
+
+        setStatus(`Updated: ${new Date().toLocaleTimeString()}`);
+      } catch (err) {
+        setStatus(err.message || String(err), true);
+      }
+    }
+
+    els.refreshBtn.addEventListener("click", refresh);
+  </script>
+</body>
+</html>
