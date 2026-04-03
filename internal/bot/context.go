@@ -37,3 +37,19 @@ func (b BotContext) SendWithInlineKeyboard(text string, keyboard tgbotapi.Inline
 	msg.ReplyMarkup = keyboard
 	b.API.Send(msg) //nolint:errcheck
 }
+
+// SendRemovingKeyboard отправляет сообщение и убирает reply-клавиатуру.
+func (b BotContext) SendRemovingKeyboard(text string) {
+	msg := tgbotapi.NewMessage(b.ChatID, text)
+	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	b.API.Send(msg) //nolint:errcheck
+}
+
+// EditMessageRemoveKeyboard убирает inline-клавиатуру у существующего сообщения.
+func (b BotContext) EditMessageRemoveKeyboard(msgID int) {
+	edit := tgbotapi.NewEditMessageReplyMarkup(
+		b.ChatID, msgID,
+		tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}},
+	)
+	b.API.Send(edit) //nolint:errcheck
+}

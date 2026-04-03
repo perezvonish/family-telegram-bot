@@ -3,9 +3,11 @@ package telegram_bot
 import (
 	"context"
 	"log"
+	"perezvonish/health-tracker/internal/bot"
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"perezvonish/health-tracker/internal/domain/pill_tracker"
 	"perezvonish/health-tracker/internal/domain/user"
+	"perezvonish/health-tracker/internal/modules/pills"
 	"slices"
 	"strconv"
 	"strings"
@@ -33,6 +35,21 @@ type ChatBot struct {
 	userRepo        user.Repository
 	dailyReportRepo daily_report.Repository
 	pillRepo        pill_tracker.Repository
+
+	router      *bot.Router
+	pillsModule *pills.Module
+}
+
+// makeBotContext строит BotContext для делегирования в роутер/модули.
+func (c *ChatBot) makeBotContext(chatID, userID int64) bot.BotContext {
+	return bot.BotContext{
+		Ctx:      c.ctx,
+		ChatID:   chatID,
+		UserID:   userID,
+		API:      c.telegramBotApi,
+		Sessions: c.router.Sessions(),
+		Users:    c.userRepo,
+	}
 }
 
 func (c *ChatBot) Start() {
@@ -89,12 +106,18 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 		cmd = cmd[:idx]
 	}
 
+	// Сначала проверяем активную pills-сессию через роутер
+	if c.router.GetSession(chatID) != nil {
+		c.router.HandleMessage(c.makeBotContext(chatID, userID), text)
+		return
+	}
+
 	switch cmd {
 	case "start", "diary":
 		c.enterDiaryScene(chatID)
 		return
 	case "pills":
-		c.handlePillsCommand(chatID, userID)
+		c.router.HandleMessage(c.makeBotContext(chatID, userID), text)
 		return
 	case "help":
 		c.handleHelpCommand(chatID)
@@ -122,13 +145,6 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 	}
 
 	session := c.sessionStore.Get(chatID)
-
-	// Проверяем pills-сцену ДО проверки step < 0, чтобы pills-флоу не прерывался
-	if session != nil && session.Scene == ScenePills {
-		c.handlePillsTextStep(chatID, userID, session, text)
-		return
-	}
-
 	if session == nil || session.Step < 0 {
 		msg := tgbotapi.NewMessage(chatID, "Используй /diary чтобы начать дневник здоровья")
 		c.telegramBotApi.Send(msg)
@@ -208,7 +224,7 @@ func (c *ChatBot) handleCallback(callback *tgbotapi.CallbackQuery) {
 	}
 
 	if strings.HasPrefix(data, "pills:") {
-		c.handlePillsCallback(chatID, userID, messageID, data)
+		c.router.HandleCallback(c.makeBotContext(chatID, userID), messageID, data)
 		return
 	}
 
@@ -448,16 +464,26 @@ func (c *ChatBot) finishSurvey(chatID int64, userID int64, session *Session) {
 	c.sendMessage(chatID, "Готово ✅")
 	c.sessionStore.Delete(chatID)
 
-	go c.checkPillsForUser(chatID, userID)
+	go c.pillsModule.RunAlerts(c.makeBotContext(chatID, userID))
 }
 
-func NewChatBot(ctx context.Context, bot *tgbotapi.BotAPI, userRepo user.Repository, dailyReportRepo daily_report.Repository, pillRepo pill_tracker.Repository) Bot {
+func NewChatBot(
+	ctx context.Context,
+	botAPI *tgbotapi.BotAPI,
+	userRepo user.Repository,
+	dailyReportRepo daily_report.Repository,
+	pillRepo pill_tracker.Repository,
+	router *bot.Router,
+	pillsModule *pills.Module,
+) Bot {
 	return &ChatBot{
 		ctx:             ctx,
-		telegramBotApi:  bot,
+		telegramBotApi:  botAPI,
 		sessionStore:    NewSessionStore(),
 		userRepo:        userRepo,
 		dailyReportRepo: dailyReportRepo,
 		pillRepo:        pillRepo,
+		router:          router,
+		pillsModule:     pillsModule,
 	}
 }

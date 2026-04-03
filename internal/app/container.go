@@ -10,6 +10,7 @@ import (
 	"perezvonish/health-tracker/internal/entry-points/telegram_bot"
 	"perezvonish/health-tracker/internal/infrastructure/database"
 	"perezvonish/health-tracker/internal/infrastructure/repository"
+	"perezvonish/health-tracker/internal/modules/pills"
 	"perezvonish/health-tracker/internal/shared/config"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -25,6 +26,7 @@ type Container struct {
 
 	FeatureFlags bot.FeatureFlagStore
 	Router       *bot.Router
+	PillsModule  *pills.Module
 
 	TelegramBot telegram_bot.Bot
 }
@@ -51,7 +53,11 @@ func (c *Container) initFeatureFlags() {
 func (c *Container) initRouter() {
 	sessions := bot.NewSessionStore()
 	c.Router = bot.NewRouter(sessions, c.FeatureFlags)
-	log.Println("Bot router initialized")
+
+	c.PillsModule = pills.New(c.PillTrackerRepo, c.UserRepo)
+	c.Router.Register(c.PillsModule)
+
+	log.Println("Bot router initialized with pills module")
 }
 
 func (c *Container) initRepositories() {
@@ -70,7 +76,7 @@ func (c *Container) initTelegramBot(ctx context.Context) {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	bot.Debug = true
 
-	c.TelegramBot = telegram_bot.NewChatBot(ctx, bot, c.UserRepo, c.DailyReportRepo, c.PillTrackerRepo)
+	c.TelegramBot = telegram_bot.NewChatBot(ctx, bot, c.UserRepo, c.DailyReportRepo, c.PillTrackerRepo, c.Router, c.PillsModule)
 }
 
 func (c *Container) Close(ctx context.Context) error {

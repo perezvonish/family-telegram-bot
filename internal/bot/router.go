@@ -27,6 +27,12 @@ func NewRouter(sessions *SessionStore, flags FeatureFlagStore) *Router {
 	}
 }
 
+// Sessions возвращает хранилище сессий роутера (для внешнего доступа при переходном периоде).
+func (r *Router) Sessions() *SessionStore { return r.sessions }
+
+// GetSession возвращает активную сессию для chatID, если она есть.
+func (r *Router) GetSession(chatID int64) *Session { return r.sessions.Get(chatID) }
+
 // Register добавляет модуль в роутер.
 func (r *Router) Register(m Module) {
 	r.modules = append(r.modules, m)
