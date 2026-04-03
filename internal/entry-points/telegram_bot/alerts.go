@@ -8,6 +8,7 @@ import (
 	"perezvonish/health-tracker/internal/domain/analytics"
 	"perezvonish/health-tracker/internal/domain/daily_report"
 	"perezvonish/health-tracker/internal/domain/user"
+	"perezvonish/health-tracker/internal/modules/diary"
 )
 
 func (c *ChatBot) startAlertWorker() {
@@ -98,7 +99,7 @@ func (c *ChatBot) checkMedStreakCelebration(u *user.User, reports []*daily_repor
 		return
 	}
 	for i := 0; i < 7; i++ {
-		if len(reports[i].MedsIssues) != len(medsOptions) {
+		if len(reports[i].MedsIssues) != len(diary.MedsOptions) {
 			return
 		}
 	}

@@ -10,6 +10,7 @@ import (
 	"perezvonish/health-tracker/internal/entry-points/telegram_bot"
 	"perezvonish/health-tracker/internal/infrastructure/database"
 	"perezvonish/health-tracker/internal/infrastructure/repository"
+	"perezvonish/health-tracker/internal/modules/diary"
 	"perezvonish/health-tracker/internal/modules/pills"
 	"perezvonish/health-tracker/internal/shared/config"
 
@@ -57,7 +58,13 @@ func (c *Container) initRouter() {
 	c.PillsModule = pills.New(c.PillTrackerRepo, c.UserRepo)
 	c.Router.Register(c.PillsModule)
 
-	log.Println("Bot router initialized with pills module")
+	// Diary регистрируется после Pills, чтобы onComplete мог вызвать pills.RunAlerts
+	diaryModule := diary.New(c.DailyReportRepo, c.UserRepo, func(ctx bot.BotContext) {
+		c.PillsModule.RunAlerts(ctx)
+	})
+	c.Router.Register(diaryModule)
+
+	log.Println("Bot router initialized (diary + pills)")
 }
 
 func (c *Container) initRepositories() {
@@ -69,14 +76,14 @@ func (c *Container) initRepositories() {
 }
 
 func (c *Container) initTelegramBot(ctx context.Context) {
-	bot, err := tgbotapi.NewBotAPI(c.Config.Telegram.BotToken)
+	botAPI, err := tgbotapi.NewBotAPI(c.Config.Telegram.BotToken)
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-	bot.Debug = true
+	log.Printf("Authorized on account %s", botAPI.Self.UserName)
+	botAPI.Debug = true
 
-	c.TelegramBot = telegram_bot.NewChatBot(ctx, bot, c.UserRepo, c.DailyReportRepo, c.PillTrackerRepo, c.Router, c.PillsModule)
+	c.TelegramBot = telegram_bot.NewChatBot(ctx, botAPI, c.UserRepo, c.DailyReportRepo, c.Router, c.PillsModule)
 }
 
 func (c *Container) Close(ctx context.Context) error {
