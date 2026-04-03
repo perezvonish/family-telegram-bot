@@ -420,6 +420,18 @@ func hasTelegramIdentity(r *http.Request) bool {
 	if strings.TrimSpace(q.Get("tgWebAppData")) != "" {
 		return true
 	}
+
+	// Telegram WebView often does not pass identity in URL query.
+	ua := strings.ToLower(strings.TrimSpace(r.UserAgent()))
+	if strings.Contains(ua, "telegram") {
+		return true
+	}
+
+	referer := strings.ToLower(strings.TrimSpace(r.Referer()))
+	if strings.Contains(referer, "t.me") || strings.Contains(referer, "telegram") {
+		return true
+	}
+
 	return false
 }
 
