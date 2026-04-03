@@ -118,6 +118,7 @@ func (s *Server) handleReports(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	yMetric := parseYMetric(r)
 
 	u, status, err := s.resolveUser(r)
 	if err != nil {
@@ -134,6 +135,7 @@ func (s *Server) handleReports(w http.ResponseWriter, r *http.Request) {
 	type reportWithWellness struct {
 		*daily_report.DailyReport
 		WellnessIndex float64 `json:"wellnessIndex"`
+		YValue        float64 `json:"yValue"`
 	}
 
 	payload := make([]reportWithWellness, 0, len(reports))
@@ -141,6 +143,7 @@ func (s *Server) handleReports(w http.ResponseWriter, r *http.Request) {
 		payload = append(payload, reportWithWellness{
 			DailyReport:   item,
 			WellnessIndex: analytics.WellnessIndex(item),
+			YValue:        yMetric.Extract(item),
 		})
 	}
 
@@ -151,6 +154,12 @@ func (s *Server) handleReports(w http.ResponseWriter, r *http.Request) {
 		"totalReports":  len(payload),
 		"generatedAt":   time.Now().UTC(),
 		"requestedDays": days,
+		"yAxis": map[string]interface{}{
+			"field": yMetric.Field,
+			"label": yMetric.Label,
+			"min":   yMetric.Min,
+			"max":   yMetric.Max,
+		},
 	})
 }
 
@@ -273,6 +282,11 @@ func (s *Server) handleWeekday(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	metric, err := parseWeekdayMetric(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	u, status, err := s.resolveUser(r)
 	if err != nil {
@@ -286,11 +300,22 @@ func (s *Server) handleWeekday(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	weekdayRaw := analytics.ByWeekday(reports)
+	weekday := make([]map[string]interface{}, 0, len(weekdayRaw))
+	for _, day := range weekdayRaw {
+		weekday = append(weekday, map[string]interface{}{
+			"day":   day.Day,
+			"value": weekdayMetricValue(day, metric),
+			"count": day.Count,
+		})
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"days":         days,
 		"user":         u,
 		"reportsCount": len(reports),
-		"weekday":      analytics.ByWeekday(reports),
+		"metric":       metric,
+		"weekday":      weekday,
 		"generatedAt":  time.Now().UTC(),
 	})
 }
@@ -336,6 +361,138 @@ func parseDays(r *http.Request, fallback int) (int, error) {
 		return 0, fmt.Errorf("days must be in range 1..3650")
 	}
 	return days, nil
+}
+
+type yMetricSpec struct {
+	Field   string
+	Label   string
+	Min     float64
+	Max     float64
+	Extract func(*daily_report.DailyReport) float64
+}
+
+var yMetricByField = map[string]yMetricSpec{
+	"wellnessIndex": {
+		Field: "wellnessIndex",
+		Label: "Wellness Index",
+		Min:   0,
+		Max:   10,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return analytics.WellnessIndex(r)
+		},
+	},
+	"mood": {
+		Field: "mood",
+		Label: "Mood",
+		Min:   0,
+		Max:   10,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.Mood)
+		},
+	},
+	"anxiety": {
+		Field: "anxiety",
+		Label: "Anxiety",
+		Min:   0,
+		Max:   5,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.Anxiety)
+		},
+	},
+	"energy": {
+		Field: "energy",
+		Label: "Energy",
+		Min:   0,
+		Max:   5,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.Energy)
+		},
+	},
+	"sleepQuality": {
+		Field: "sleepQuality",
+		Label: "Sleep Quality",
+		Min:   0,
+		Max:   5,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.SleepQuality)
+		},
+	},
+	"migraine": {
+		Field: "migraine",
+		Label: "Migraine",
+		Min:   0,
+		Max:   5,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.Migraine)
+		},
+	},
+	"libido": {
+		Field: "libido",
+		Label: "Libido",
+		Min:   0,
+		Max:   5,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.Libido)
+		},
+	},
+	"relationship": {
+		Field: "relationship",
+		Label: "Relationship",
+		Min:   0,
+		Max:   5,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.Relationship)
+		},
+	},
+	"closeness": {
+		Field: "closeness",
+		Label: "Closeness",
+		Min:   0,
+		Max:   5,
+		Extract: func(r *daily_report.DailyReport) float64 {
+			return float64(r.Closeness)
+		},
+	},
+}
+
+func parseYMetric(r *http.Request) yMetricSpec {
+	requested := strings.TrimSpace(r.URL.Query().Get("y_field"))
+	if requested == "" {
+		requested = "wellnessIndex"
+	}
+	if metric, ok := yMetricByField[requested]; ok {
+		return metric
+	}
+	return yMetricByField["wellnessIndex"]
+}
+
+func parseWeekdayMetric(r *http.Request) (string, error) {
+	metric := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("metric")))
+	if metric == "" {
+		return "mood", nil
+	}
+
+	switch metric {
+	case "mood", "anxiety", "energy", "migraine", "sleep_quality":
+		return metric, nil
+	default:
+		return "", fmt.Errorf("metric must be one of: mood, anxiety, energy, migraine, sleep_quality")
+	}
+}
+
+func weekdayMetricValue(day analytics.WeekdayStats, metric string) float64 {
+	switch metric {
+	case "anxiety":
+		return day.AvgAnxiety
+	case "energy":
+		return day.AvgEnergy
+	case "migraine":
+		return day.AvgMigraine
+	case "sleep_quality":
+		return day.AvgSleepQuality
+	default:
+		return day.AvgMood
+	}
 }
 
 type scoredDay struct {
