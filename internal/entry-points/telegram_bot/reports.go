@@ -2,7 +2,6 @@ package telegram_bot
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 
 // ─── /help ───────────────────────────────────────────────────────────────────
 
-func (c *ChatBot) handleHelpCommand(chatID int64, telegramUsername string) {
+func (c *ChatBot) handleHelpCommand(chatID int64, _ string) {
 	text := `📋 Доступные команды:
 
 /diary — заполнить дневник здоровья
@@ -29,14 +28,6 @@ func (c *ChatBot) handleHelpCommand(chatID int64, telegramUsername string) {
 
 	dashboardURL := c.dashboardURL
 	if dashboardURL != "" {
-		separator := "?"
-		if strings.Contains(dashboardURL, "?") {
-			separator = "&"
-		}
-		if strings.TrimSpace(telegramUsername) != "" {
-			dashboardURL += separator + "telegram_username=" + url.QueryEscape(telegramUsername)
-		}
-
 		button := tgbotapi.NewInlineKeyboardButtonURL("Открыть дашборд", dashboardURL)
 		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(button),
