@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"perezvonish/health-tracker/internal/bot"
 	"perezvonish/health-tracker/internal/domain/daily_report"
@@ -15,6 +16,7 @@ import (
 	"perezvonish/health-tracker/internal/modules/diary"
 	"perezvonish/health-tracker/internal/modules/pills"
 	"perezvonish/health-tracker/internal/shared/config"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -87,7 +89,16 @@ func (c *Container) initTelegramBot(ctx context.Context) {
 	log.Printf("Authorized on account %s", botAPI.Self.UserName)
 	botAPI.Debug = true
 
-	c.TelegramBot = telegram_bot.NewChatBot(ctx, botAPI, c.UserRepo, c.DailyReportRepo, c.Router, c.PillsModule)
+	dashboardURL := c.Config.Server.DashboardURL
+	if dashboardURL == "" {
+		publicHost := strings.TrimSpace(c.Config.Server.Host)
+		if publicHost == "" || publicHost == "0.0.0.0" || publicHost == "::" {
+			publicHost = "0.0.0.0"
+		}
+		dashboardURL = fmt.Sprintf("http://%s:%d/", publicHost, c.Config.Server.Port)
+	}
+
+	c.TelegramBot = telegram_bot.NewChatBot(ctx, botAPI, c.UserRepo, c.DailyReportRepo, c.Router, c.PillsModule, dashboardURL)
 }
 
 func (c *Container) initHTTPServer(ctx context.Context) {

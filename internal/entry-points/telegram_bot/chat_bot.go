@@ -21,8 +21,9 @@ type ChatBot struct {
 	userRepo        user.Repository
 	dailyReportRepo daily_report.Repository
 
-	router      *bot.Router
-	pillsModule *pills.Module
+	router       *bot.Router
+	pillsModule  *pills.Module
+	dashboardURL string
 }
 
 func (c *ChatBot) makeBotContext(chatID, userID int64) bot.BotContext {
@@ -100,7 +101,7 @@ func (c *ChatBot) handleMessage(message *tgbotapi.Message) {
 	// Команды reports.go (до Этапа 5 остаются здесь)
 	switch cmd {
 	case "help":
-		c.handleHelpCommand(chatID)
+		c.handleHelpCommand(chatID, message.From.UserName)
 		return
 	case "today":
 		c.handleTodayCommand(chatID, userID)
@@ -151,6 +152,7 @@ func NewChatBot(
 	dailyReportRepo daily_report.Repository,
 	router *bot.Router,
 	pillsModule *pills.Module,
+	dashboardURL string,
 ) Bot {
 	return &ChatBot{
 		ctx:             ctx,
@@ -159,5 +161,6 @@ func NewChatBot(
 		dailyReportRepo: dailyReportRepo,
 		router:          router,
 		pillsModule:     pillsModule,
+		dashboardURL:    dashboardURL,
 	}
 }

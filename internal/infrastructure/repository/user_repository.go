@@ -5,8 +5,11 @@ import (
 	"errors"
 	"perezvonish/health-tracker/internal/domain/user"
 	"perezvonish/health-tracker/internal/infrastructure/database"
+	"regexp"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -55,4 +58,33 @@ func (r *UserRepository) FindByTelegramID(ctx context.Context, telegramID int64)
 	}
 
 	return model.ToEntity(), nil
+}
+
+func (r *UserRepository) FindByUsername(ctx context.Context, username string) (*user.User, error) {
+	normalized := normalizeUsername(username)
+	if normalized == "" {
+		return nil, ErrUserNotFound
+	}
+
+	var model UserModel
+	filter := bson.M{
+		"username": primitive.Regex{
+			Pattern: "^" + regexp.QuoteMeta(normalized) + "$",
+			Options: "i",
+		},
+	}
+
+	err := r.collection.FindOne(ctx, filter).Decode(&model)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return model.ToEntity(), nil
+}
+
+func normalizeUsername(username string) string {
+	return strings.ToLower(strings.TrimPrefix(strings.TrimSpace(username), "@"))
 }

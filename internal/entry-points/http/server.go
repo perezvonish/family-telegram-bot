@@ -83,7 +83,17 @@ func (s *Server) makeWebHandler() http.Handler {
 		log.Printf("failed to init embedded web filesystem: %v", err)
 		return http.NotFoundHandler()
 	}
-	return http.FileServer(http.FS(sub))
+	fileServer := http.FileServer(http.FS(sub))
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+			if !hasTelegramIdentity(r) {
+				serveAccessDeniedPage(w)
+				return
+			}
+		}
+		fileServer.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) withAuth(next http.Handler) http.Handler {
@@ -293,6 +303,18 @@ func (s *Server) handleWeekday(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) resolveUser(r *http.Request) (*user.User, int, error) {
+	username := strings.TrimSpace(r.URL.Query().Get("telegram_username"))
+	if username == "" {
+		username = strings.TrimSpace(r.URL.Query().Get("username"))
+	}
+	if username != "" {
+		u, err := s.userRepo.FindByUsername(s.ctx, username)
+		if err != nil {
+			return nil, http.StatusNotFound, fmt.Errorf("user with username=%q not found", username)
+		}
+		return u, http.StatusOK, nil
+	}
+
 	telegramIDRaw := strings.TrimSpace(r.URL.Query().Get("telegram_id"))
 	if telegramIDRaw != "" {
 		telegramID, err := strconv.ParseInt(telegramIDRaw, 10, 64)
@@ -381,4 +403,60 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		log.Printf("failed to write JSON response: %v", err)
 	}
+}
+
+func hasTelegramIdentity(r *http.Request) bool {
+	q := r.URL.Query()
+	if strings.TrimSpace(q.Get("telegram_username")) != "" {
+		return true
+	}
+	if strings.TrimSpace(q.Get("username")) != "" {
+		return true
+	}
+	if strings.TrimSpace(q.Get("telegram_id")) != "" {
+		return true
+	}
+	// Telegram WebApp payload (if dashboard will be moved to WebApp mode).
+	if strings.TrimSpace(q.Get("tgWebAppData")) != "" {
+		return true
+	}
+	return false
+}
+
+func serveAccessDeniedPage(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = w.Write([]byte(`<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Доступ запрещен</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(251, 146, 60, 0.25), transparent 34%),
+        radial-gradient(circle at 82% 80%, rgba(59, 130, 246, 0.24), transparent 36%),
+        linear-gradient(160deg, #0b1020, #182138 48%, #0f172a);
+      color: #f8fafc;
+      font-family: "Segoe UI", sans-serif;
+    }
+    h1 {
+      margin: 0 16px;
+      font-size: clamp(32px, 6vw, 72px);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      text-shadow: 0 10px 30px rgba(15, 23, 42, 0.55);
+    }
+  </style>
+</head>
+<body>
+  <h1>Доступ запрещен</h1>
+</body>
+</html>`))
 }

@@ -154,6 +154,7 @@
 
     <div class="panel">
       <input id="token" placeholder="Bearer token">
+      <input id="telegramUsername" placeholder="telegram username (optional)">
       <input id="telegramId" placeholder="telegram_id (optional)">
       <input id="days" type="number" min="7" max="365" value="30" placeholder="days">
       <button id="refreshBtn">Refresh Dashboard</button>
@@ -224,6 +225,7 @@
 
     const els = {
       token: document.getElementById("token"),
+      telegramUsername: document.getElementById("telegramUsername"),
       telegramId: document.getElementById("telegramId"),
       days: document.getElementById("days"),
       refreshBtn: document.getElementById("refreshBtn"),
@@ -245,6 +247,9 @@
       const params = new URLSearchParams();
       const days = Number(els.days.value || "30");
       params.set("days", String(days));
+      if (els.telegramUsername.value.trim()) {
+        params.set("telegram_username", els.telegramUsername.value.trim());
+      }
       if (els.telegramId.value.trim()) {
         params.set("telegram_id", els.telegramId.value.trim());
       }

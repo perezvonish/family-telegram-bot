@@ -2,16 +2,19 @@ package telegram_bot
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
 	"perezvonish/health-tracker/internal/domain/analytics"
 	"perezvonish/health-tracker/internal/domain/daily_report"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // ─── /help ───────────────────────────────────────────────────────────────────
 
-func (c *ChatBot) handleHelpCommand(chatID int64) {
+func (c *ChatBot) handleHelpCommand(chatID int64, telegramUsername string) {
 	text := `📋 Доступные команды:
 
 /diary — заполнить дневник здоровья
@@ -22,7 +25,25 @@ func (c *ChatBot) handleHelpCommand(chatID int64) {
 /migraine — статистика мигреней и топ триггеров за 60 дней
 /pills — трекер таблеток: остаток, пополнение, уведомления об окончании
 /help — это сообщение`
-	c.sendMessage(chatID, text)
+	msg := tgbotapi.NewMessage(chatID, text)
+
+	dashboardURL := c.dashboardURL
+	if dashboardURL != "" {
+		separator := "?"
+		if strings.Contains(dashboardURL, "?") {
+			separator = "&"
+		}
+		if strings.TrimSpace(telegramUsername) != "" {
+			dashboardURL += separator + "telegram_username=" + url.QueryEscape(telegramUsername)
+		}
+
+		button := tgbotapi.NewInlineKeyboardButtonURL("Открыть дашборд", dashboardURL)
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(button),
+		)
+	}
+
+	c.telegramBotApi.Send(msg) //nolint:errcheck
 }
 
 // ─── /today ──────────────────────────────────────────────────────────────────
