@@ -392,7 +392,19 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 }
 
 func hasTelegramIdentity(r *http.Request) bool {
-	fmt.Println(r.UserAgent())
+	if strings.TrimSpace(r.Header.Get("X-Telegram-Init-Data")) != "" {
+		return true
+	}
+
+	q := r.URL.Query()
+	// Telegram WebApp query params (non-user-specific service params).
+	if strings.TrimSpace(q.Get("tgWebAppData")) != "" ||
+		strings.TrimSpace(q.Get("tgWebAppPlatform")) != "" ||
+		strings.TrimSpace(q.Get("tgWebAppVersion")) != "" ||
+		strings.TrimSpace(q.Get("tgWebAppThemeParams")) != "" ||
+		strings.TrimSpace(q.Get("tgWebAppStartParam")) != "" {
+		return true
+	}
 
 	// Telegram WebView signals.
 	ua := strings.ToLower(strings.TrimSpace(r.UserAgent()))
