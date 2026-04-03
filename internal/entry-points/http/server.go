@@ -2,6 +2,8 @@ package httpentry
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/subtle"
 	"embed"
 	"encoding/json"
@@ -10,6 +12,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,6 +32,7 @@ var embeddedWeb embed.FS
 type Server struct {
 	ctx             context.Context
 	cfg             config.ServerConfig
+	botToken        string
 	userRepo        user.Repository
 	dailyReportRepo daily_report.Repository
 	httpServer      *http.Server
@@ -37,23 +41,25 @@ type Server struct {
 func NewServer(
 	ctx context.Context,
 	cfg config.ServerConfig,
+	botToken string,
 	userRepo user.Repository,
 	dailyReportRepo daily_report.Repository,
 ) *Server {
 	s := &Server{
 		ctx:             ctx,
 		cfg:             cfg,
+		botToken:        botToken,
 		userRepo:        userRepo,
 		dailyReportRepo: dailyReportRepo,
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/", s.makeWebHandler())
-	mux.Handle("/api/reports", s.withAuth(http.HandlerFunc(s.handleReports)))
-	mux.Handle("/api/stats", s.withAuth(http.HandlerFunc(s.handleStats)))
-	mux.Handle("/api/correlations", s.withAuth(http.HandlerFunc(s.handleCorrelations)))
-	mux.Handle("/api/migraine", s.withAuth(http.HandlerFunc(s.handleMigraine)))
-	mux.Handle("/api/weekday", s.withAuth(http.HandlerFunc(s.handleWeekday)))
+	mux.Handle("/api/reports", s.withTelegramAuth(http.HandlerFunc(s.handleReports)))
+	mux.Handle("/api/stats", s.withTelegramAuth(http.HandlerFunc(s.handleStats)))
+	mux.Handle("/api/correlations", s.withTelegramAuth(http.HandlerFunc(s.handleCorrelations)))
+	mux.Handle("/api/migraine", s.withTelegramAuth(http.HandlerFunc(s.handleMigraine)))
+	mux.Handle("/api/weekday", s.withTelegramAuth(http.HandlerFunc(s.handleWeekday)))
 
 	s.httpServer = &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
@@ -96,22 +102,21 @@ func (s *Server) makeWebHandler() http.Handler {
 	})
 }
 
-func (s *Server) withAuth(next http.Handler) http.Handler {
+func (s *Server) withTelegramAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s.cfg.BearerToken == "" {
-			writeError(w, http.StatusServiceUnavailable, "HTTP_BEARER_TOKEN is not configured")
+		if strings.TrimSpace(s.botToken) == "" {
+			writeError(w, http.StatusServiceUnavailable, "TELEGRAM_BOT_TOKEN is not configured")
 			return
 		}
 
-		auth := r.Header.Get("Authorization")
-		if !strings.HasPrefix(auth, "Bearer ") {
-			writeError(w, http.StatusUnauthorized, "missing bearer token")
+		initData := strings.TrimSpace(r.Header.Get("X-Telegram-Init-Data"))
+		if initData == "" {
+			writeError(w, http.StatusUnauthorized, "missing telegram init data")
 			return
 		}
 
-		token := strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
-		if subtle.ConstantTimeCompare([]byte(token), []byte(s.cfg.BearerToken)) != 1 {
-			writeError(w, http.StatusUnauthorized, "invalid bearer token")
+		if err := validateTelegramInitData(initData, s.botToken); err != nil {
+			writeError(w, http.StatusUnauthorized, "invalid telegram init data")
 			return
 		}
 
@@ -303,43 +308,24 @@ func (s *Server) handleWeekday(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) resolveUser(r *http.Request) (*user.User, int, error) {
-	username := strings.TrimSpace(r.URL.Query().Get("telegram_username"))
-	if username == "" {
-		username = strings.TrimSpace(r.URL.Query().Get("username"))
-	}
-	if username != "" {
-		u, err := s.userRepo.FindByUsername(s.ctx, username)
-		if err != nil {
-			return nil, http.StatusNotFound, fmt.Errorf("user with username=%q not found", username)
-		}
-		return u, http.StatusOK, nil
+	initData := strings.TrimSpace(r.Header.Get("X-Telegram-Init-Data"))
+	if initData == "" {
+		return nil, http.StatusUnauthorized, fmt.Errorf("missing telegram init data")
 	}
 
-	telegramIDRaw := strings.TrimSpace(r.URL.Query().Get("telegram_id"))
-	if telegramIDRaw != "" {
-		telegramID, err := strconv.ParseInt(telegramIDRaw, 10, 64)
-		if err != nil {
-			return nil, http.StatusBadRequest, fmt.Errorf("telegram_id must be an integer")
-		}
-
-		u, err := s.userRepo.FindByTelegramID(s.ctx, telegramID)
-		if err != nil {
-			return nil, http.StatusNotFound, fmt.Errorf("user with telegram_id=%d not found", telegramID)
-		}
-		return u, http.StatusOK, nil
-	}
-
-	users, err := s.userRepo.FindAll(s.ctx)
+	tgUser, err := telegramUserFromInitData(initData)
 	if err != nil {
-		return nil, http.StatusInternalServerError, fmt.Errorf("failed to load users")
+		return nil, http.StatusUnauthorized, fmt.Errorf("failed to parse telegram user")
 	}
-	if len(users) == 0 {
-		return nil, http.StatusNotFound, fmt.Errorf("no users found")
+	if strings.TrimSpace(tgUser.Username) == "" {
+		return nil, http.StatusForbidden, fmt.Errorf("telegram username is required")
 	}
-	if len(users) > 1 {
-		return nil, http.StatusBadRequest, fmt.Errorf("multiple users found; pass telegram_id query parameter")
+
+	u, err := s.userRepo.FindByUsername(s.ctx, tgUser.Username)
+	if err != nil {
+		return nil, http.StatusNotFound, fmt.Errorf("user with username=%q not found", tgUser.Username)
 	}
-	return users[0], http.StatusOK, nil
+	return u, http.StatusOK, nil
 }
 
 func (s *Server) reportsByDays(userID uuid.UUID, days int) ([]*daily_report.DailyReport, error) {
@@ -406,22 +392,7 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 }
 
 func hasTelegramIdentity(r *http.Request) bool {
-	q := r.URL.Query()
-	if strings.TrimSpace(q.Get("telegram_username")) != "" {
-		return true
-	}
-	if strings.TrimSpace(q.Get("username")) != "" {
-		return true
-	}
-	if strings.TrimSpace(q.Get("telegram_id")) != "" {
-		return true
-	}
-	// Telegram WebApp payload (if dashboard will be moved to WebApp mode).
-	if strings.TrimSpace(q.Get("tgWebAppData")) != "" {
-		return true
-	}
-
-	// Telegram WebView often does not pass identity in URL query.
+	// Telegram WebView signals.
 	ua := strings.ToLower(strings.TrimSpace(r.UserAgent()))
 	if strings.Contains(ua, "telegram") {
 		return true
@@ -433,6 +404,64 @@ func hasTelegramIdentity(r *http.Request) bool {
 	}
 
 	return false
+}
+
+type telegramInitUser struct {
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+}
+
+func telegramUserFromInitData(initData string) (*telegramInitUser, error) {
+	values, err := url.ParseQuery(initData)
+	if err != nil {
+		return nil, err
+	}
+	userRaw := strings.TrimSpace(values.Get("user"))
+	if userRaw == "" {
+		return nil, fmt.Errorf("missing user in init data")
+	}
+
+	var u telegramInitUser
+	if err := json.Unmarshal([]byte(userRaw), &u); err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func validateTelegramInitData(initData, botToken string) error {
+	values, err := url.ParseQuery(initData)
+	if err != nil {
+		return err
+	}
+
+	receivedHash := strings.TrimSpace(values.Get("hash"))
+	if receivedHash == "" {
+		return fmt.Errorf("missing hash")
+	}
+
+	dataPairs := make([]string, 0, len(values))
+	for key, value := range values {
+		if key == "hash" || len(value) == 0 {
+			continue
+		}
+		dataPairs = append(dataPairs, key+"="+value[0])
+	}
+	sort.Strings(dataPairs)
+	dataCheckString := strings.Join(dataPairs, "\n")
+
+	secretMAC := hmac.New(sha256.New, []byte("WebAppData"))
+	secretMAC.Write([]byte(botToken))
+	secretKey := secretMAC.Sum(nil)
+
+	signMAC := hmac.New(sha256.New, secretKey)
+	signMAC.Write([]byte(dataCheckString))
+	calculatedHash := fmt.Sprintf("%x", signMAC.Sum(nil))
+
+	if subtle.ConstantTimeCompare([]byte(calculatedHash), []byte(receivedHash)) != 1 {
+		return fmt.Errorf("hash mismatch")
+	}
+
+	return nil
 }
 
 func serveAccessDeniedPage(w http.ResponseWriter) {

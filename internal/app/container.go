@@ -102,7 +102,7 @@ func (c *Container) initTelegramBot(ctx context.Context) {
 }
 
 func (c *Container) initHTTPServer(ctx context.Context) {
-	c.HTTPServer = httpentry.NewServer(ctx, c.Config.Server, c.UserRepo, c.DailyReportRepo)
+	c.HTTPServer = httpentry.NewServer(ctx, c.Config.Server, c.Config.Telegram.BotToken, c.UserRepo, c.DailyReportRepo)
 }
 
 func (c *Container) Close(ctx context.Context) error {

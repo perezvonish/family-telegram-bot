@@ -154,9 +154,6 @@
     <p class="subtitle">Daily signals, weekly shape, trigger map.</p>
 
     <div class="panel">
-      <input id="token" placeholder="Bearer token">
-      <input id="telegramUsername" placeholder="telegram username (optional)">
-      <input id="telegramId" placeholder="telegram_id (optional)">
       <input id="days" type="number" min="7" max="365" value="30" placeholder="days">
       <button id="refreshBtn">Refresh Dashboard</button>
     </div>
@@ -224,14 +221,10 @@
   <script>
     const charts = {};
     const telegramCtx = {
-      username: "",
-      telegramId: ""
+      username: ""
     };
 
     const els = {
-      token: document.getElementById("token"),
-      telegramUsername: document.getElementById("telegramUsername"),
-      telegramId: document.getElementById("telegramId"),
       days: document.getElementById("days"),
       refreshBtn: document.getElementById("refreshBtn"),
       status: document.getElementById("status"),
@@ -246,18 +239,11 @@
     function initTelegramContext() {
       const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
       if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+        setStatus("Open this page from Telegram", true);
         return;
       }
       const user = tg.initDataUnsafe.user;
       telegramCtx.username = (user.username || "").trim();
-      telegramCtx.telegramId = user.id ? String(user.id) : "";
-
-      if (telegramCtx.username) {
-        els.telegramUsername.value = telegramCtx.username;
-      }
-      if (telegramCtx.telegramId) {
-        els.telegramId.value = telegramCtx.telegramId;
-      }
 
       tg.ready();
       if (typeof tg.expand === "function") {
@@ -274,24 +260,17 @@
       const params = new URLSearchParams();
       const days = Number(els.days.value || "30");
       params.set("days", String(days));
-      const username = els.telegramUsername.value.trim() || telegramCtx.username;
-      if (username) {
-        params.set("telegram_username", username);
-      }
-      const telegramId = els.telegramId.value.trim() || telegramCtx.telegramId;
-      if (telegramId) {
-        params.set("telegram_id", telegramId);
-      }
       return params.toString();
     }
 
     async function api(path) {
-      const token = els.token.value.trim();
-      if (!token) {
-        throw new Error("Bearer token is required");
+      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+      const initData = tg ? (tg.initData || "") : "";
+      if (!initData) {
+        throw new Error("Open this page from Telegram Web App");
       }
       const response = await fetch(path, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { "X-Telegram-Init-Data": initData }
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
