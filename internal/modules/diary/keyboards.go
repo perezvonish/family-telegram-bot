@@ -13,6 +13,9 @@ func yesNoKeyboard() tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton("да"),
 			tgbotapi.NewKeyboardButton("нет"),
 		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("← Назад"),
+		),
 	)
 }
 
@@ -46,6 +49,9 @@ func wakeTimeKeyboard() tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton("12:00"),
 			tgbotapi.NewKeyboardButton("позже 12:00"),
 		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("← Назад"),
+		),
 	)
 }
 
@@ -55,6 +61,7 @@ func fastingKeyboard() tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("около часа")),
 		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("2–3 часа")),
 		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("больше 3 часов")),
+		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("← Назад")),
 	)
 }
 
@@ -64,12 +71,14 @@ func activityKeyboard() tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Мало (дорога/быт)")),
 		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Средне (5к+ шагов/спорт)")),
 		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Сверх нормы")),
+		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("← Назад")),
 	)
 }
 
 func skipKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Пропустить")),
+		tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("← Назад")),
 	)
 }
 
@@ -90,30 +99,18 @@ func multiSelectKeyboard(options []string, selected []string) tgbotapi.InlineKey
 		))
 	}
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("← Назад", "back:"),
 		tgbotapi.NewInlineKeyboardButtonData("Готово", "m:done"),
 	))
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: rows}
 }
 
-func scaleRangeKeyboard(prefix string, min, max int, isPositive bool) tgbotapi.InlineKeyboardMarkup {
-	count := max - min + 1
-	base := []string{"😣", "😕", "😐", "🙂", "😊", "😌", "💪", "🔥", "🚀", "🤯", "🌟"}
-
-	emojis := make([]string, len(base))
-	if isPositive {
-		copy(emojis, base)
-	} else {
-		for i := range base {
-			emojis[i] = base[len(base)-1-i]
-		}
-	}
-
+func scaleRangeKeyboard(prefix string, min, max int) tgbotapi.InlineKeyboardMarkup {
 	var buttons []tgbotapi.InlineKeyboardButton
-	for i := 0; i < count; i++ {
-		value := min + i
+	for i := min; i <= max; i++ {
 		buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(
-			fmt.Sprintf("%d %s", value, emojis[i]),
-			fmt.Sprintf("%s:%d", prefix, value),
+			fmt.Sprintf("%d", i),
+			fmt.Sprintf("%s:%d", prefix, i),
 		))
 	}
 
@@ -125,20 +122,26 @@ func scaleRangeKeyboard(prefix string, min, max int, isPositive bool) tgbotapi.I
 		}
 		rows = append(rows, buttons[i:end])
 	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("← Назад", "back:"),
+	))
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: rows}
 }
 
 func labeledScaleKeyboard(prefix string, labels []string) tgbotapi.InlineKeyboardMarkup {
 	var buttons []tgbotapi.InlineKeyboardButton
-	for i, label := range labels {
+	for i := range labels {
 		value := i + 1
 		buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(
-			fmt.Sprintf("%d %s", value, label),
+			fmt.Sprintf("%d", value),
 			fmt.Sprintf("%s:%d", prefix, value),
 		))
 	}
 	return tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{buttons},
+		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+			buttons,
+			{tgbotapi.NewInlineKeyboardButtonData("← Назад", "back:")},
+		},
 	}
 }
 
@@ -149,6 +152,9 @@ func migraineSideKeyboard() tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData("Сильнее слева", "mside:left"),
 			tgbotapi.NewInlineKeyboardButtonData("Сильнее справа", "mside:right"),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("← Назад", "back:"),
+		),
 	)
 }
 
@@ -158,6 +164,9 @@ func stabilityKeyboard() tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData("Ровное", "stability:ровное"),
 			tgbotapi.NewInlineKeyboardButtonData("Были качели", "stability:качели"),
 			tgbotapi.NewInlineKeyboardButtonData("Резкие перепады", "stability:перепады"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("← Назад", "back:"),
 		),
 	)
 }

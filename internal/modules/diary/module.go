@@ -29,7 +29,7 @@ var MedsOptions = []string{
 
 var (
 	mealsOptions       = []string{"Завтрак", "Перекус", "Обед", "Ужин"}
-	extrasOptions      = []string{"Кофе", "Матча", "Алкоголь", "Сигареты"}
+	extrasOptions      = []string{"Кофе", "Матча", "Алкоголь", "Сигареты", "Энергос", "Вкусняшки (с высоким ГИ)"}
 	sleepLabels        = []string{"Почти не спала", "Плохой", "Средний", "Хороший", "Отличный"}
 	anxietyLabels      = []string{"Нет", "Слабая", "Умеренная", "Сильная", "Парализующая"}
 	energyLabels       = []string{"Опустошение", "Низкая", "Средняя", "Хорошая", "Заряжен"}
@@ -87,7 +87,7 @@ func (m *Module) CallbackPrefixes() []string {
 	return []string{
 		"m:", "sleep:", "mood:", "stability:",
 		"anxiety:", "energy:", "libido:", "rel:", "close:",
-		"migraine:", "mside:",
+		"migraine:", "mside:", "back:",
 	}
 }
 
@@ -102,6 +102,11 @@ func (m *Module) HandleCommand(ctx bot.BotContext, _, _ string) error {
 
 // HandleTextStep — обработка текстовых шагов (0–5, 19, 20).
 func (m *Module) HandleTextStep(ctx bot.BotContext, session *bot.Session, text string) error {
+	if text == "← Назад" {
+		m.goBackText(ctx, session)
+		return nil
+	}
+
 	switch session.Step {
 	case 0:
 		session.Set(keySleepTime, text)
@@ -170,7 +175,7 @@ func (m *Module) HandleCallback(ctx bot.BotContext, msgID int, data string) erro
 		session.Set(keySleepQuality, parseScaleValue(data))
 		session.Step = 10
 		m.sendPhoto(ctx, "assets/scales/mood.jpg", "Оцени настроение за день:",
-			scaleRangeKeyboard("mood", 1, 10, true))
+			scaleRangeKeyboard("mood", 1, 10))
 
 	case strings.HasPrefix(data, "mood:"):
 		session.Set(keyMood, parseScaleValue(data))
@@ -212,7 +217,7 @@ func (m *Module) HandleCallback(ctx bot.BotContext, msgID int, data string) erro
 		session.Step = 17
 		m.sendPhoto(ctx, "assets/scales/migraine.jpg",
 			"Оцени мигрень (0 - не было | 5 - вызываем скорую):",
-			scaleRangeKeyboard("migraine", 0, 5, false))
+			scaleRangeKeyboard("migraine", 0, 5))
 
 	case strings.HasPrefix(data, "migraine:"):
 		migraine := parseScaleValue(data)
@@ -237,8 +242,108 @@ func (m *Module) HandleCallback(ctx bot.BotContext, msgID int, data string) erro
 			session.Step = 20
 			ctx.SendWithKeyboard("Есть что-то, что хочется отметить про день?", skipKeyboard())
 		}
+
+	case strings.HasPrefix(data, "back:"):
+		m.goBack(ctx, session)
 	}
 	return nil
+}
+
+func (m *Module) goBack(ctx bot.BotContext, session *bot.Session) {
+	switch session.Step {
+	case 6:
+		session.Step = 5
+		ctx.SendWithKeyboard("Была ли физическая активность?", activityKeyboard())
+	case 7:
+		session.Step = 6
+		ctx.SendWithInlineKeyboard("Все приемы пищи были?",
+			multiSelectKeyboard(mealsOptions, session.GetStringSlice(keyMealsSkipped)))
+	case 8:
+		session.Step = 7
+		ctx.SendWithInlineKeyboard("Все таблетки выпила?",
+			multiSelectKeyboard(MedsOptions, session.GetStringSlice(keyMedsIssues)))
+	case 9:
+		session.Step = 8
+		ctx.SendWithInlineKeyboard("Что употребляла сегодня?",
+			multiSelectKeyboard(extrasOptions, session.GetStringSlice(keyExtras)))
+	case 10:
+		session.Step = 9
+		m.sendPhoto(ctx, "assets/scales/sleep_quality.jpg", "Оцени качество сна:",
+			labeledScaleKeyboard("sleep", sleepLabels))
+	case 11:
+		session.Step = 10
+		m.sendPhoto(ctx, "assets/scales/mood.jpg", "Оцени настроение за день:",
+			scaleRangeKeyboard("mood", 1, 10))
+	case 12:
+		session.Step = 11
+		ctx.SendWithInlineKeyboard("Как менялось настроение в течение дня?", stabilityKeyboard())
+	case 13:
+		session.Step = 12
+		m.sendPhoto(ctx, "assets/scales/anxiety.jpg", "Оцени тревогу:",
+			labeledScaleKeyboard("anxiety", anxietyLabels))
+	case 14:
+		session.Step = 13
+		m.sendPhoto(ctx, "assets/scales/energy.jpg", "Оцени уровень энергии:",
+			labeledScaleKeyboard("energy", energyLabels))
+	case 15:
+		session.Step = 14
+		m.sendPhoto(ctx, "assets/scales/libido.jpg", "Оцени уровень либидо:",
+			labeledScaleKeyboard("libido", libidoLabels))
+	case 16:
+		session.Step = 15
+		m.sendPhoto(ctx, "assets/scales/relationship.jpg", "Оцени удовлетворённость отношениями:",
+			labeledScaleKeyboard("rel", relationshipLabels))
+	case 17:
+		session.Step = 16
+		m.sendPhoto(ctx, "assets/scales/closeness.jpg", "Оцени близость с партнёром:",
+			labeledScaleKeyboard("close", closenessLabels))
+	case 18:
+		session.Step = 17
+		m.sendPhoto(ctx, "assets/scales/migraine.jpg",
+			"Оцени мигрень (0 - не было | 5 - вызываем скорую):",
+			scaleRangeKeyboard("migraine", 0, 5))
+	}
+}
+
+func (m *Module) goBackText(ctx bot.BotContext, session *bot.Session) {
+	switch session.Step {
+	case 0:
+		ctx.SendWithKeyboard("Во сколько вчера легла?", sleepTimeKeyboard())
+	case 1:
+		session.Step = 0
+		ctx.SendWithKeyboard("Во сколько вчера легла?", sleepTimeKeyboard())
+	case 2:
+		session.Step = 1
+		ctx.SendWithKeyboard("Во сколько сегодня проснулась?", wakeTimeKeyboard())
+	case 3:
+		session.Step = 2
+		ctx.SendWithKeyboard("Работала сегодня?", yesNoKeyboard())
+	case 4:
+		session.Step = 3
+		ctx.SendWithKeyboard("Сегодня была менструация?", yesNoKeyboard())
+	case 5:
+		session.Step = 4
+		ctx.SendWithKeyboard("Было ли голодание в течение дня?", fastingKeyboard())
+	case 19:
+		session.Step = 18
+		ctx.SendWithInlineKeyboard("Где локализована боль?", migraineSideKeyboard())
+	case 20:
+		migraine := session.GetInt(keyMigraine)
+		if migraine >= 2 {
+			session.Step = 19
+			msg := tgbotapi.NewMessage(ctx.ChatID, "Какой препарат принимала? (например: Ибуклин 600)")
+			msg.ReplyMarkup = removeKeyboard()
+			ctx.API.Send(msg) //nolint:errcheck
+		} else if migraine >= 1 {
+			session.Step = 18
+			ctx.SendWithInlineKeyboard("Где локализована боль?", migraineSideKeyboard())
+		} else {
+			session.Step = 17
+			m.sendPhoto(ctx, "assets/scales/migraine.jpg",
+				"Оцени мигрень (0 - не было | 5 - вызываем скорую):",
+				scaleRangeKeyboard("migraine", 0, 5))
+		}
+	}
 }
 
 func (m *Module) handleMultiSelect(ctx bot.BotContext, session *bot.Session, msgID int, data string) error {
